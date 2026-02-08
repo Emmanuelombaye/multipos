@@ -5,9 +5,9 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "build": "echo 'Build step for Node.js'",
+    "start": "node init && node src/server.js",
+    "dev": "node init && nodemon src/server.js",
+    "build": "node init && echo 'Build step for Node.js'",
     "seed": "node src/db/seed.js",
     "seed:realistic": "node src/db/seed-realistic.js"
   },

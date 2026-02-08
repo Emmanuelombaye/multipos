@@ -1,14 +1,11 @@
 node_modules/
 dist/
-.env
-.env.local
 .env.*.local
 *.log
 *.pid
 *.seed
 *.pid.lock
 .DS_Store
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -20,3 +17,4 @@ out/
 build/
 coverage/
 .eslintcache
+config.bat
