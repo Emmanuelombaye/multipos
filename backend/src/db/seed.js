@@ -19,8 +19,8 @@ async function seed() {
         status: 'open'
       },
       {
-        name: 'Edendrop Lavington',
-        location: 'Lavington Mall',
+        name: 'Edendrop Msabweni',
+        location: 'Msabweni',
         status: 'open'
       }
     ];
@@ -134,16 +134,23 @@ async function seed() {
       {
         name: 'Cashier Tamasha',
         email: 'cashier@example.com',
-        password_hash: password,
+        password_hash: await bcrypt.hash('@Kenya90!', 10),
         role: 'cashier',
         branch_id: branches[0]?.id
       },
       {
         name: 'Cashier Reem',
         email: 'cashier2@example.com',
-        password_hash: password,
+        password_hash: await bcrypt.hash('@Kenya80!', 10),
         role: 'cashier',
         branch_id: branches[1]?.id
+      },
+      {
+        name: 'Cashier Msabweni',
+        email: 'cashier3@example.com',
+        password_hash: await bcrypt.hash('@Kenya70!', 10),
+        role: 'cashier',
+        branch_id: branches[2]?.id
       }
     ];
 

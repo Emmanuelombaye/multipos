@@ -51,8 +51,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        const branchId = user.branchId || selectedBranch || 'branch-1';
+        let branchId = user.branchId || selectedBranch || 'branch-1';
         const role = user.role || selectedRole;
+        // Persist branch selection for cashiers
+        if (role === 'cashier') {
+          localStorage.setItem('selectedBranch', branchId);
+        }
         onLogin(role, branchId);
       }
     } catch (err: any) {
