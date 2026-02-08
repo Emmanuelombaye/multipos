@@ -9,12 +9,16 @@ const router = express.Router();
 router.post('/', authorize(['cashier', 'manager', 'admin']), async (req, res, next) => {
   try {
     const { branchId, category, amount, description } = req.body;
-    const recordedBy = req.user.id;
+    const recordedBy = req.user?.id;
+    console.log(`[Expenses] Request from user: ${recordedBy || 'ANONYMOUS'}`);
 
-    if (!branchId || !category || !amount) {
-      res.status(400).json({ error: 'branchId, category, and amount are required' });
+    if (!branchId || !category || !amount || !recordedBy) {
+      console.error(`[Expenses] Missing required fields: branchId=${!!branchId}, category=${!!category}, amount=${!!amount}, recordedBy=${!!recordedBy}`);
+      res.status(400).json({ error: 'branchId, category, amount, and user identification are required' });
       return;
     }
+
+    console.log(`[Expenses] Creating expense for branch ${branchId}: KES ${amount} (${category})`);
 
     const expense = await expenseService.createExpense(
       branchId,
@@ -24,10 +28,13 @@ router.post('/', authorize(['cashier', 'manager', 'admin']), async (req, res, ne
       recordedBy
     );
 
+    console.log(`[Expenses] Successfully created expense: ${expense.id}`);
+
     // Invalidate caches after successful expense creation
     clearCache(`/dashboard/branch/${branchId}`);
     clearCache(`/dashboard/admin`);
     clearCache(`/expenses/branch/${branchId}`);
+    clearCache(`/expenses/branch/${branchId}/range`);
 
     res.status(201).json(expense);
   } catch (error) {

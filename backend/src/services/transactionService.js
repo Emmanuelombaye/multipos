@@ -102,9 +102,11 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
   // endDate: '2026-02-07' -> '2026-02-07T23:59:59Z'
   // startDate: '2026-02-07' -> '2026-02-07T00:00:00Z'
   // endDate: '2026-02-07' -> '2026-02-07T23:59:59.999Z'
+  const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
   const cleanDate = (d) => d && d.split('T')[0];
-  const startISO = `${cleanDate(startDate)}T00:00:00Z`;
-  const endISO = `${cleanDate(endDate)}T23:59:59.999Z`;
+
+  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
+  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
 
   const { data, error } = await supabase
     .from('transactions')

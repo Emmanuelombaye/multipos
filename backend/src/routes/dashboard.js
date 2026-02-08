@@ -142,9 +142,12 @@ router.get('/metrics/:branchId', async (req, res, next) => {
       return;
     }
 
-    // Expand date strings to full ISO timestamps to ensure the whole day is captured
-    const startISO = `${startDate.split('T')[0]}T00:00:00Z`;
-    const endISO = `${endDate.split('T')[0]}T23:59:59.999Z`;
+    // Check if the dates already contain time/offset
+    const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
+    const cleanDate = (d) => d && d.split('T')[0];
+
+    const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
+    const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
 
     const { data: transactions } = await supabase
       .from('transactions')

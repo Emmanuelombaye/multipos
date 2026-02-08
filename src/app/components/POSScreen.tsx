@@ -46,7 +46,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
     }
     return navigator.onLine;
   });
-  
+
   // Expense states
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState<string>('petty-cash');
@@ -60,7 +60,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   // Fetch products with stock
   useEffect(() => {
     fetchProducts();
-    
+
     // Poll for product updates every 10 seconds
     const intervalId = setInterval(() => {
       fetchProducts(true);
@@ -118,10 +118,10 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
         return prev.map((item) =>
           item.productId === productId
             ? {
-                ...item,
-                quantity: item.quantity + weight,
-                total: (item.quantity + weight) * item.pricePerKg,
-              }
+              ...item,
+              quantity: item.quantity + weight,
+              total: (item.quantity + weight) * item.pricePerKg,
+            }
             : item
         );
       }
@@ -188,7 +188,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
       }));
 
       const response = await apiClient.createTransaction(branchId, items, method);
-      
+
       const total = cart.reduce((sum, item) => sum + item.total, 0);
       if (response?.offline) {
         toast.success('Sale saved offline and will sync when online');
@@ -209,10 +209,10 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
           `Payment of KES ${total.toLocaleString()} processed via ${method.toUpperCase()}. Receipt printed!`
         );
       }
-      
+
       setCart([]);
       setSelectedProduct(null);
-      
+
       // Refresh products to update stock immediately
       if (!response?.offline) {
         await new Promise(resolve => setTimeout(resolve, 500)); // Small delay to ensure backend processes
@@ -252,7 +252,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
   const handleSaveStockCount = async () => {
     const productsWithStock = Object.entries(closingStocks).filter(([_, stock]) => stock && parseFloat(stock) >= 0);
-    
+
     if (productsWithStock.length === 0) {
       toast.error('Please enter closing stock for at least one product');
       return;
@@ -261,7 +261,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
     setIsProcessing(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Save closing stock for all products with entered values
       const responses = await Promise.all(
         productsWithStock.map(([productId, stock]) =>
@@ -277,7 +277,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
       }
       setClosingStocks({});
       setShowStockDialog(false);
-      
+
       // Refresh products to show updated stock
       if (!hasOffline) {
         await fetchProducts();
@@ -308,8 +308,8 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
             </div>
           )}
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => fetchProducts()}
               disabled={isLoadingProducts}
@@ -347,17 +347,17 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                   </div>
                   <div className="space-y-2">
                     <Label>Amount (KES)</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="Enter amount" 
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
                       value={expenseAmount}
                       onChange={(e) => setExpenseAmount(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
-                    <Input 
-                      placeholder="e.g. Cleaning detergent" 
+                    <Input
+                      placeholder="e.g. Cleaning detergent"
                       value={expenseDesc}
                       onChange={(e) => setExpenseDesc(e.target.value)}
                     />
@@ -394,12 +394,12 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Input 
-                            type="number" 
-                            className="w-24 h-9" 
+                          <Input
+                            type="number"
+                            className="w-24 h-9"
                             placeholder="0.00"
                             value={closingStocks[product.id] || ''}
-                            onChange={(e) => setClosingStocks({...closingStocks, [product.id]: e.target.value})}
+                            onChange={(e) => setClosingStocks({ ...closingStocks, [product.id]: e.target.value })}
                           />
                           <span className="text-sm font-medium">kg</span>
                         </div>
@@ -409,8 +409,8 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setShowStockDialog(false)} disabled={isProcessing}>Cancel</Button>
-                  <Button 
-                    className="bg-red-700 hover:bg-red-800" 
+                  <Button
+                    className="bg-red-700 hover:bg-red-800"
                     onClick={handleSaveStockCount}
                     disabled={isProcessing}
                   >
@@ -432,11 +432,10 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
             {products.map((product) => (
               <Card
                 key={product.id}
-                className={`p-4 cursor-pointer transition-all hover:shadow-lg ${
-                  selectedProduct === product.id
+                className={`p-4 cursor-pointer transition-all hover:shadow-lg ${selectedProduct === product.id
                     ? 'ring-2 ring-red-700 bg-red-50'
                     : 'hover:border-red-200'
-                } ${product.stock < 5 ? 'opacity-60' : ''}`}
+                  } ${product.stock < 5 ? 'opacity-60' : ''}`}
                 onClick={() => setSelectedProduct(product.id)}
               >
                 <div className="text-center">
@@ -655,6 +654,11 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
           </Button>
         </div>
       </Card>
+
+      {/* Hidden Debug Info (Pressing 'D' to see is too complex, just show small at bottom for now) */}
+      <div className="fixed bottom-1 left-1 text-[8px] text-neutral-300 pointer-events-none opacity-50 z-50">
+        API: {import.meta.env.VITE_API_URL || 'Localhost'} | Branch: {branchId} | ID: {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id.slice(0, 5) : 'Anon'}
+      </div>
     </div>
   );
 }

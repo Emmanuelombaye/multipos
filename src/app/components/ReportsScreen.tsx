@@ -12,31 +12,31 @@ import jsPDF from 'jspdf';
 type Timeframe = 'day' | '3day' | 'week' | 'month' | '3month';
 
 export function ReportsScreen() {
-    // PDF Export Handler
-    const handleExportReport = () => {
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text('Reports & Analytics', 14, 18);
-      doc.setFontSize(12);
-      doc.text(`Timeframe: ${getTimeframeLabel(timeframe)}`, 14, 28);
-      doc.text(`Total Sales: KES ${totalSales.toLocaleString()}`, 14, 38);
-      doc.text(`Total Expenses: KES ${totalExpenses.toLocaleString()}`, 14, 48);
-      doc.text(`Net Growth: KES ${netGrowth.toLocaleString()}`, 14, 58);
-      doc.text(`Best Branch: ${bestBranchName || 'N/A'}`, 14, 68);
+  // PDF Export Handler
+  const handleExportReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Reports & Analytics', 14, 18);
+    doc.setFontSize(12);
+    doc.text(`Timeframe: ${getTimeframeLabel(timeframe)}`, 14, 28);
+    doc.text(`Total Sales: KES ${totalSales.toLocaleString()}`, 14, 38);
+    doc.text(`Total Expenses: KES ${totalExpenses.toLocaleString()}`, 14, 48);
+    doc.text(`Net Growth: KES ${netGrowth.toLocaleString()}`, 14, 58);
+    doc.text(`Best Branch: ${bestBranchName || 'N/A'}`, 14, 68);
 
-      doc.setFontSize(14);
-      doc.text('Branch Sales:', 14, 80);
-      branchSalesComparison.forEach((b, i) => {
-        doc.text(`${b.branch}: KES ${b.sales.toLocaleString()}`, 14, 90 + i * 10);
-      });
+    doc.setFontSize(14);
+    doc.text('Branch Sales:', 14, 80);
+    branchSalesComparison.forEach((b, i) => {
+      doc.text(`${b.branch}: KES ${b.sales.toLocaleString()}`, 14, 90 + i * 10);
+    });
 
-      doc.text('Expense Distribution:', 14, 100 + branchSalesComparison.length * 10);
-      categoryDistribution.forEach((c, i) => {
-        doc.text(`${c.name}: KES ${c.value.toLocaleString()} (${c.percentage}%)`, 14, 110 + branchSalesComparison.length * 10 + i * 10);
-      });
+    doc.text('Expense Distribution:', 14, 100 + branchSalesComparison.length * 10);
+    categoryDistribution.forEach((c, i) => {
+      doc.text(`${c.name}: KES ${c.value.toLocaleString()} (${c.percentage}%)`, 14, 110 + branchSalesComparison.length * 10 + i * 10);
+    });
 
-      doc.save('report.pdf');
-    };
+    doc.save('report.pdf');
+  };
   const [timeframe, setTimeframe] = useState<Timeframe>('week');
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<any[]>([]);
@@ -88,9 +88,15 @@ export function ReportsScreen() {
       const startDateStr = toLocalDate(startDate);
       const endDateStr = toLocalDate(endDate);
 
+      // Create local ISO range for the entire timeframe
+      const localStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+      const localEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+      const startISO = localStart.toISOString();
+      const endISO = localEnd.toISOString();
+
       const metricsByBranch = await Promise.all(
         safeBranches.map(async (branch) => {
-          const metrics = await apiClient.getMetrics(branch.id, startDateStr, endDateStr);
+          const metrics = await apiClient.getMetrics(branch.id, startISO, endISO);
           return { branch, metrics: metrics || {} };
         })
       );
@@ -174,7 +180,7 @@ export function ReportsScreen() {
     : branches[0]?.name;
 
   const getTimeframeLabel = (tf: Timeframe) => {
-    switch(tf) {
+    switch (tf) {
       case 'day': return 'Last 24 Hours';
       case '3day': return 'Last 3 Days';
       case 'week': return 'Last 7 Days';
@@ -318,40 +324,40 @@ export function ReportsScreen() {
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#b91c1c" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#b91c1c" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#b91c1c" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#b91c1c" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 axisLine={false}
                 tickLine={false}
-                tick={{fill: '#737373', fontSize: 12}}
+                tick={{ fill: '#737373', fontSize: 12 }}
                 dy={10}
               />
-              <YAxis 
+              <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{fill: '#737373', fontSize: 12}}
+                tick={{ fill: '#737373', fontSize: 12 }}
                 tickFormatter={(val) => `KES ${val / 1000}k`}
               />
               <Tooltip
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 formatter={(value: number) => `KES ${value.toLocaleString()}`}
               />
-              <Area 
-                type="monotone" 
-                dataKey="sales" 
-                stroke="#b91c1c" 
+              <Area
+                type="monotone"
+                dataKey="sales"
+                stroke="#b91c1c"
                 strokeWidth={3}
-                fillOpacity={1} 
-                fill="url(#colorSales)" 
+                fillOpacity={1}
+                fill="url(#colorSales)"
               />
-              <Bar 
-                dataKey="expenses" 
-                fill="#d4d4d4" 
-                radius={[4, 4, 0, 0]} 
+              <Bar
+                dataKey="expenses"
+                fill="#d4d4d4"
+                radius={[4, 4, 0, 0]}
                 barSize={timeframe === 'month' ? 4 : 20}
               />
             </AreaChart>
@@ -395,7 +401,7 @@ export function ReportsScreen() {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend verticalAlign="bottom" height={36}/>
+                <Legend verticalAlign="bottom" height={36} />
               </PieChart>
             </ResponsiveContainer>
           </div>

@@ -131,7 +131,13 @@ export function BranchManagement() {
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    console.log(`[BranchManagement] Loading metrics for ${dateStr} (local)`);
+    // Calculate local start and end of day in ISO format
+    const localStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const localEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    const startISO = localStart.toISOString();
+    const endISO = localEnd.toISOString();
+
+    console.log(`[BranchManagement] Loading metrics for ${dateStr} (Local: ${startISO} to ${endISO})`);
     setMetricsLoading(true);
 
     try {
@@ -143,9 +149,9 @@ export function BranchManagement() {
           console.log(`[BranchManagement] Fetching data for ${branch.name}...`);
           const [stockHistory, expenses, transactions, expensesByCategory, currentStock] = await Promise.all([
             apiClient.getStockHistoryByDate(branch.id, dateStr),
-            apiClient.getExpensesByDateRange(branch.id, dateStr, dateStr),
-            apiClient.getTransactionsByDateRange(branch.id, dateStr, dateStr),
-            apiClient.getExpensesByCategory(branch.id, dateStr, dateStr),
+            apiClient.getExpensesByDateRange(branch.id, startISO, endISO),
+            apiClient.getTransactionsByDateRange(branch.id, startISO, endISO),
+            apiClient.getExpensesByCategory(branch.id, startISO, endISO),
             isSelectedDateToday ? apiClient.getCurrentStock(branch.id) : Promise.resolve([])
           ]);
           console.log(`[BranchManagement] ${branch.name} raw data:`, {

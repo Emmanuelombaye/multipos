@@ -9,10 +9,12 @@ const router = express.Router();
 router.post('/', authorize(['cashier', 'manager', 'admin']), async (req, res, next) => {
   try {
     const { branchId, items, paymentMethod } = req.body;
-    const cashierId = req.user.id;
+    const cashierId = req.user?.id;
+    console.log(`[Transactions] Request from cashier: ${cashierId || 'ANONYMOUS'} for branch ${branchId}`);
 
-    if (!branchId || !items || !paymentMethod) {
-      res.status(400).json({ error: 'branchId, items, and paymentMethod are required' });
+    if (!branchId || !items || !paymentMethod || !cashierId) {
+      console.error(`[Transactions] Missing required fields: branchId=${!!branchId}, items=${!!items}, paymentMethod=${!!paymentMethod}, cashierId=${!!cashierId}`);
+      res.status(400).json({ error: 'branchId, items, paymentMethod, and user identification are required' });
       return;
     }
 
@@ -21,6 +23,8 @@ router.post('/', authorize(['cashier', 'manager', 'admin']), async (req, res, ne
       return;
     }
 
+    console.log(`[Transactions] Creating sale for branch ${branchId}: KES ${items.reduce((sum, i) => sum + i.subtotal, 0)} via ${paymentMethod}`);
+
     const transaction = await transactionService.createTransaction(
       branchId,
       cashierId,
@@ -28,10 +32,13 @@ router.post('/', authorize(['cashier', 'manager', 'admin']), async (req, res, ne
       paymentMethod
     );
 
+    console.log(`[Transactions] Successfully created transaction: ${transaction.id}`);
+
     // Invalidate caches after successful transaction
     clearCache(`/dashboard/branch/${branchId}`);
     clearCache(`/dashboard/admin`);
     clearCache(`/transactions/branch/${branchId}`);
+    clearCache(`/transactions/branch/${branchId}/range`);
     clearCache(`/inventory/current/${branchId}`);
 
     res.status(201).json(transaction);

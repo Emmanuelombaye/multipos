@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { 
-  FileText, 
-  Calendar as CalendarIcon, 
-  ArrowRightLeft, 
-  DollarSign, 
-  Smartphone, 
-  Receipt, 
+import {
+  FileText,
+  Calendar as CalendarIcon,
+  ArrowRightLeft,
+  DollarSign,
+  Smartphone,
+  Receipt,
   PackageSearch,
   Download,
   Filter
@@ -21,12 +21,15 @@ import { apiClient } from '../api/client';
 
 export function AdminFinancials() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
-  // Always use UTC for date selection
-  const getUTCDateString = () => {
+  // Use local date for selection to match user expectation
+  const getLocalDateString = () => {
     const now = new Date();
-    return now.toISOString().split('T')[0];
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
-  const [selectedDate, setSelectedDate] = useState<string>(getUTCDateString());
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
   const [branches, setBranches] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -99,9 +102,14 @@ export function AdminFinancials() {
 
     // Safeguard: ensure selectedDate is valid
     const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate);
-    const safeDate = isValidDate ? selectedDate : getUTCDateString();
-    const startDate = `${safeDate}T00:00:00.000Z`;
-    const endDate = `${safeDate}T23:59:59.999Z`;
+    const safeDate = isValidDate ? selectedDate : getLocalDateString();
+    const [yearVal, monthVal, dayVal] = safeDate.split('-').map(Number);
+
+    // Create local start and end of the selected day
+    const localStart = new Date(yearVal, monthVal - 1, dayVal, 0, 0, 0, 0);
+    const localEnd = new Date(yearVal, monthVal - 1, dayVal, 23, 59, 59, 999);
+    const startISO = localStart.toISOString();
+    const endISO = localEnd.toISOString();
 
     try {
       if (!silent) {
@@ -111,9 +119,9 @@ export function AdminFinancials() {
       const results = await Promise.all(
         branchIds.map(async (branchId) => {
           const [expenses, transactions, stockHistory] = await Promise.all([
-            apiClient.getExpensesByDateRange(branchId, startDate, endDate),
-            apiClient.getTransactionsByDateRange(branchId, startDate, endDate),
-            apiClient.getStockHistoryByDate(branchId, selectedDate),
+            apiClient.getExpensesByDateRange(branchId, startISO, endISO),
+            apiClient.getTransactionsByDateRange(branchId, startISO, endISO),
+            apiClient.getStockHistoryByDate(branchId, safeDate),
           ]);
 
           return {
@@ -195,7 +203,7 @@ export function AdminFinancials() {
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 mb-1">Financial & Stock Report</h1>
           <p className="text-neutral-600">Daily reconciliation for {currentBranchName}</p>
-          <p className="text-xs text-neutral-500 mt-1">All dates/times shown in UTC</p>
+          <p className="text-xs text-neutral-500 mt-1">Times shown in local time</p>
         </div>
         <Button onClick={handleExportPDF} className="bg-red-700 hover:bg-red-800">
           <Download className="w-4 h-4 mr-2" />
@@ -224,7 +232,7 @@ export function AdminFinancials() {
             <label className="text-xs font-bold text-neutral-500 uppercase">Select Day</label>
             <div className="relative">
               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <Input 
+              <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
@@ -334,7 +342,7 @@ export function AdminFinancials() {
                       <td className="py-3 px-4 text-sm">
                         <p className="font-medium">{exp.description || 'Expense'}</p>
                         <p className="text-xs text-neutral-400">
-                          {format(new Date(exp.created_at), 'HH:mm')} UTC • {staffById[exp.recorded_by] || 'Staff'}
+                          {format(new Date(exp.created_at), 'HH:mm')} • {staffById[exp.recorded_by] || 'Staff'}
                         </p>
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-red-700">

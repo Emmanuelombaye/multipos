@@ -31,9 +31,11 @@ export const getExpensesByBranch = async (branchId, limit = 50, offset = 0) => {
 
 export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
   // Clean date input: strip time portion if present
-  const cleanDate = (d) => d.split('T')[0];
-  const startISO = `${cleanDate(startDate)}T00:00:00Z`;
-  const endISO = `${cleanDate(endDate)}T23:59:59.999Z`;
+  const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
+  const cleanDate = (d) => d && d.split('T')[0];
+
+  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
+  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
 
   const { data, error } = await supabase
     .from('expenses')
@@ -66,9 +68,11 @@ export const getTotalExpensesByDay = async (branchId, dateStr) => {
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {
   // Convert date strings to timestamp ranges
   // Convert date strings to timestamp ranges
+  const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
   const cleanDate = (d) => d && d.split('T')[0];
-  const startISO = `${cleanDate(startDate)}T00:00:00Z`;
-  const endISO = `${cleanDate(endDate)}T23:59:59.999Z`;
+
+  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
+  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
 
   const { data, error } = await supabase
     .from('expenses')
