@@ -26,13 +26,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     loadBranches();
   }, []);
 
-  // Always reset selectedBranch when switching to cashier
-  useEffect(() => {
-    if (selectedRole === 'cashier' && branches.length > 0) {
-      setSelectedBranch(branches[0].id);
-    }
-  }, [selectedRole, branches]);
-
   const loadBranches = async () => {
     try {
       const data = await apiClient.getBranches();
@@ -58,11 +51,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        let branchId = user.branchId;
+        let branchId = user.branchId || selectedBranch || 'branch-1';
         const role = user.role || selectedRole;
-        // For cashiers, always use the selected branch
+        // Persist branch selection for cashiers
         if (role === 'cashier') {
-          branchId = selectedBranch;
           localStorage.setItem('selectedBranch', branchId);
         }
         onLogin(role, branchId);
@@ -146,7 +138,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {selectedRole === 'cashier' && (
               <div className="space-y-2">
                 <Label className="block text-sm font-medium text-neutral-700">Branch</Label>
-                <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={isLoading} required>
+                <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={isLoading}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select branch" />
                   </SelectTrigger>
@@ -175,13 +167,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-xs text-blue-700">
             <strong>Demo Accounts:</strong><br/>
-            Admin: admin@example.com / password123<br/>
-            Manager: manager@example.com / password123<br/>
-            Cashier Tamasha: cashier@tamasha.com / @Kenya90!<br/>
-            Cashier Reem: cashier@reem.com / @Kenya80!<br/>
-            Cashier Msabweni: cashier@msabweni.com / @Kenya70!<br/>
-            <br/>
-            <strong>Note:</strong> Cashiers must select their branch before logging in.
+            Admin: admin@example.com<br/>
+            Manager: manager@example.com<br/>
+            Cashier: cashier@example.com<br/>
+            Password: password123
           </p>
         </div>
       </Card>
