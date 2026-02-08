@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -44,13 +46,32 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 
 // Protected routes (require authentication)
-app.use('/api/branches', authenticate, branchRoutes);
+app.use('/api/branches', branchRoutes);
 app.use('/api/products', authenticate, productRoutes);
 app.use('/api/transactions', authenticate, transactionRoutes);
 app.use('/api/inventory', authenticate, inventoryRoutes);
 app.use('/api/expenses', authenticate, expenseRoutes);
 app.use('/api/staff', authenticate, staffRoutes);
 app.use('/api/dashboard', authenticate, dashboardRoutes);
+
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const distPath = path.join(__dirname, '../../dist');
+
+  // Serve static files
+  app.use(express.static(distPath));
+
+  // Handle SPA fallback
+  app.get('*', (req, res, next) => {
+    // Skip API routes so they can hit the error handler or 404 json
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use(errorHandler);

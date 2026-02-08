@@ -1,6 +1,6 @@
 import express from 'express';
 import * as branchService from '../services/branchService.js';
-import { authorize } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.get('/', (req, res, next) => {
 });
 
 // Get branch by ID with stats
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const branch = await branchService.getBranchWithStats(req.params.id);
     res.json(branch);
@@ -23,7 +23,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // Create branch (admin only)
-router.post('/', authorize(['admin']), async (req, res, next) => {
+router.post('/', authenticate, authorize(['admin']), async (req, res, next) => {
   try {
     const { name, location } = req.body;
 
@@ -40,7 +40,7 @@ router.post('/', authorize(['admin']), async (req, res, next) => {
 });
 
 // Update branch (admin only)
-router.put('/:id', authorize(['admin']), async (req, res, next) => {
+router.put('/:id', authenticate, authorize(['admin']), async (req, res, next) => {
   try {
     const branch = await branchService.updateBranch(req.params.id, req.body);
     res.json(branch);
