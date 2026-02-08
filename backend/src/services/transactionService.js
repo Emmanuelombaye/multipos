@@ -118,13 +118,17 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
   return data;
 };
 
-export const getTotalSalesByDay = async (branchId) => {
-  const today = new Date().toISOString().split('T')[0];
+export const getTotalSalesByDay = async (branchId, dateStr) => {
+  const date = dateStr || new Date().toISOString().split('T')[0];
+  const startISO = `${date}T00:00:00Z`;
+  const endISO = `${date}T23:59:59.999Z`;
+
   const { data, error } = await supabase
     .from('transactions')
     .select('total')
     .eq('branch_id', branchId)
-    .gte('created_at', today);
+    .gte('created_at', startISO)
+    .lte('created_at', endISO);
 
   if (error) throw error;
   return data?.reduce((sum, t) => sum + t.total, 0) || 0;

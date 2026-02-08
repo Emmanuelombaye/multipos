@@ -142,19 +142,23 @@ router.get('/metrics/:branchId', async (req, res, next) => {
       return;
     }
 
+    // Expand date strings to full ISO timestamps to ensure the whole day is captured
+    const startISO = `${startDate.split('T')[0]}T00:00:00Z`;
+    const endISO = `${endDate.split('T')[0]}T23:59:59.999Z`;
+
     const { data: transactions } = await supabase
       .from('transactions')
       .select('total, created_at')
       .eq('branch_id', branchId)
-      .gte('created_at', startDate)
-      .lte('created_at', endDate);
+      .gte('created_at', startISO)
+      .lte('created_at', endISO);
 
     const { data: expenses } = await supabase
       .from('expenses')
       .select('amount, created_at')
       .eq('branch_id', branchId)
-      .gte('created_at', startDate)
-      .lte('created_at', endDate);
+      .gte('created_at', startISO)
+      .lte('created_at', endISO);
 
     // Group by date
     const dateMetrics = {};

@@ -47,16 +47,20 @@ export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
   return data;
 };
 
-export const getTotalExpensesByDay = async (branchId) => {
-  const today = new Date().toISOString().split('T')[0];
+export const getTotalExpensesByDay = async (branchId, dateStr) => {
+  const date = dateStr || new Date().toISOString().split('T')[0];
+  const startISO = `${date}T00:00:00Z`;
+  const endISO = `${date}T23:59:59.999Z`;
+
   const { data, error } = await supabase
     .from('expenses')
-    .select('total:amount')
+    .select('amount')
     .eq('branch_id', branchId)
-    .gte('created_at', today);
+    .gte('created_at', startISO)
+    .lte('created_at', endISO);
 
   if (error) throw error;
-  return data?.reduce((sum, e) => sum + (e.total || 0), 0) || 0;
+  return data?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
 };
 
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {

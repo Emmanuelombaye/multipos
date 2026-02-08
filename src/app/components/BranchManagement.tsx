@@ -59,7 +59,7 @@ export function BranchManagement() {
   useEffect(() => {
     if (branches.length > 0 && selectedDate && allProducts.length > 0) {
       loadBranchMetrics(selectedDate);
-      
+
       // Poll for updates every 10 seconds
       const intervalId = setInterval(() => {
         if (branches.length > 0 && selectedDate && allProducts.length > 0) {
@@ -78,7 +78,7 @@ export function BranchManagement() {
       const data = await apiClient.getBranches();
       const branchesArray = Array.isArray(data) ? data : [];
       console.log(`[BranchManagement] Fetched ${branchesArray.length} branches:`, branchesArray.map(b => b.name));
-      
+
       // Load detailed info for each branch
       const branchesWithDetails = await Promise.all(
         branchesArray.map(async (branch) => {
@@ -90,7 +90,7 @@ export function BranchManagement() {
           }
         })
       );
-      
+
       setBranches(branchesWithDetails);
     } catch (error) {
       console.error('Failed to load branches:', error);
@@ -125,22 +125,28 @@ export function BranchManagement() {
   };
 
   const loadBranchMetrics = async (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    console.log(`[BranchManagement] Loading metrics for ${dateStr}`);
+    // Construct local YYYY-MM-DD string to avoid UTC timezone shifts
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    console.log(`[BranchManagement] Loading metrics for ${dateStr} (local)`);
     setMetricsLoading(true);
 
     try {
       // Clear cache to get fresh data
       apiClient.clearCache?.();
-      
+
       const metricsEntries = await Promise.all(
         branches.map(async (branch) => {
           console.log(`[BranchManagement] Fetching data for ${branch.name}...`);
-          const [stockHistory, expenses, transactions, expensesByCategory] = await Promise.all([
+          const [stockHistory, expenses, transactions, expensesByCategory, currentStock] = await Promise.all([
             apiClient.getStockHistoryByDate(branch.id, dateStr),
             apiClient.getExpensesByDateRange(branch.id, dateStr, dateStr),
             apiClient.getTransactionsByDateRange(branch.id, dateStr, dateStr),
             apiClient.getExpensesByCategory(branch.id, dateStr, dateStr),
+            isSelectedDateToday ? apiClient.getCurrentStock(branch.id) : Promise.resolve([])
           ]);
           console.log(`[BranchManagement] ${branch.name} raw data:`, {
             stockHistory: stockHistory?.length || 0,
@@ -157,27 +163,51 @@ export function BranchManagement() {
             (sum: number, entry: any) => sum + (parseFloat(entry.opening_stock) || 0),
             0
           );
-          const closingStock = stockHistoryArray.reduce(
-            (sum: number, entry: any) => sum + (parseFloat(entry.closing_stock) || 0),
-            0
-          );
+
+          let closingStock;
+          if (isSelectedDateToday) {
+            // Use live current stock for today
+            const currentStockArray = Array.isArray(currentStock) ? currentStock : [];
+            closingStock = currentStockArray.reduce(
+              (sum: number, entry: any) => sum + (parseFloat(entry.current_stock) || 0),
+              0
+            );
+          } else {
+            // Use recorded historical closing stock
+            closingStock = stockHistoryArray.reduce(
+              (sum: number, entry: any) => sum + (parseFloat(entry.closing_stock) || 0),
+              0
+            );
+          }
           const expensesTotal = expensesArray.reduce(
             (sum: number, entry: any) => sum + (parseFloat(entry.amount) || 0),
             0
           );
-          
+
           const salesTotal = transactionsArray.reduce(
             (sum: number, transaction: any) => sum + (parseFloat(transaction.total) || 0),
             0
           );
 
-          // Calculate low stock based on closing stock from the selected date
-          const lowStockCount = stockHistoryArray.reduce((count: number, entry: any) => {
-            const product = allProducts.find((p) => p.id === entry.product_id);
-            if (!product) return count;
-            const stockLevel = entry.closing_stock !== null ? entry.closing_stock : entry.opening_stock;
-            return stockLevel < product.low_stock_threshold ? count + 1 : count;
-          }, 0);
+          // Calculate low stock count
+          let lowStockCount;
+          if (isSelectedDateToday) {
+            // Use live current stock for today's alerts
+            const currentStockArray = Array.isArray(currentStock) ? currentStock : [];
+            lowStockCount = currentStockArray.reduce((count: number, bs: any) => {
+              const product = allProducts.find((p) => p.id === bs.product_id);
+              if (!product) return count;
+              return bs.current_stock < product.low_stock_threshold ? count + 1 : count;
+            }, 0);
+          } else {
+            // Use historical closing stock for past dates
+            lowStockCount = stockHistoryArray.reduce((count: number, entry: any) => {
+              const product = allProducts.find((p) => p.id === entry.product_id);
+              if (!product) return count;
+              const stockLevel = entry.closing_stock !== null ? entry.closing_stock : entry.opening_stock;
+              return stockLevel < product.low_stock_threshold ? count + 1 : count;
+            }, 0);
+          }
 
           // Process expense breakdown by category
           const expenseBreakdown: Record<string, number> = expensesByCategory || {};
@@ -229,7 +259,7 @@ export function BranchManagement() {
 
   const handleEditStock = async () => {
     if (!selectedBranch) return;
-    
+
     // Create editing stock array with current values
     const stockWithProducts = branchStock.map((bs: any) => {
       const product = allProducts.find(p => p.id === bs.product_id);
@@ -239,7 +269,7 @@ export function BranchManagement() {
         newStock: bs.current_stock,
       };
     });
-    
+
     setEditingStock(stockWithProducts);
     setStockDialogOpen(true);
   };
@@ -298,8 +328,8 @@ export function BranchManagement() {
           <h1 className="text-3xl font-bold text-neutral-900 mb-2">Branch Management</h1>
           <p className="text-neutral-600">Manage all branches and operations</p>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => selectedDate && loadBranchMetrics(selectedDate)}
           disabled={metricsLoading}
           className="text-neutral-700 border-neutral-200"
@@ -356,130 +386,129 @@ export function BranchManagement() {
           const showActive = branch.status === 'open' && isSelectedDateToday;
 
           return (
-          <Card key={branch.id} className={`p-6 hover:shadow-xl transition-all ${metricsLoading ? 'opacity-60' : 'opacity-100'}`}>
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start gap-3">
-                <div className="p-3 bg-red-100 rounded-lg">
-                  <Store className="w-6 h-6 text-red-700" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-neutral-900">{branch.name}</h3>
-                  <div className="flex items-center gap-1 text-neutral-600 mt-1">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{branch.location}</span>
+            <Card key={branch.id} className={`p-6 hover:shadow-xl transition-all ${metricsLoading ? 'opacity-60' : 'opacity-100'}`}>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-3 bg-red-100 rounded-lg">
+                    <Store className="w-6 h-6 text-red-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-neutral-900">{branch.name}</h3>
+                    <div className="flex items-center gap-1 text-neutral-600 mt-1">
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">{branch.location}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {showActive && (
-                  <Badge className="bg-emerald-100 text-emerald-700">ACTIVE</Badge>
-                )}
-                <Badge
-                  variant={branch.status === 'open' ? 'default' : 'secondary'}
-                  className={
-                    branch.status === 'open'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-neutral-200 text-neutral-600'
-                  }
-                >
-                  {branch.status?.toUpperCase() || 'UNKNOWN'}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-700 mx-auto mb-1" />
-                <p className="text-lg font-bold text-neutral-900">
-                  KES {(metrics.salesTotal || 0).toLocaleString()}
-                </p>
-                <p className="text-xs text-neutral-600">{isSelectedDateToday ? 'Today\'s Sales' : 'Sales'}</p>
-              </div>
-
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <Users className="w-5 h-5 text-blue-700 mx-auto mb-1" />
-                <p className="text-lg font-bold text-neutral-900">{branch.staffCount || 0}</p>
-                <p className="text-xs text-neutral-600">Staff Members</p>
-              </div>
-
-              <div className="text-center p-3 bg-red-50 rounded-lg">
-                <Package className="w-5 h-5 text-red-700 mx-auto mb-1" />
-                <p className="text-lg font-bold text-neutral-900">{metrics.lowStockCount}</p>
-                <p className="text-xs text-neutral-600">Low Stock</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="p-3 bg-neutral-50 rounded-lg">
-                <p className="text-xs text-neutral-500">Opening Stock</p>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {metrics.openingStock.toLocaleString()} kg
-                </p>
-              </div>
-              <div className="p-3 bg-neutral-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-neutral-500">Closing Stock</p>
+                <div className="flex items-center gap-2">
                   {showActive && (
-                    <Badge className="text-[10px] bg-emerald-100 text-emerald-700">ACTIVE</Badge>
+                    <Badge className="bg-emerald-100 text-emerald-700">ACTIVE</Badge>
                   )}
-                </div>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {metrics.closingStock.toLocaleString()} kg
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg mb-4 cursor-pointer hover:bg-amber-100 transition-colors" onClick={() => toggleExpenseDetails(branch.id)}>
-              <div className="flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-amber-700" />
-                <p className="text-sm text-amber-700">Expenses</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <p className="text-lg font-semibold text-neutral-900">
-                  KES {metrics.expensesTotal.toLocaleString()}
-                </p>
-                <ChevronDown 
-                  className={`w-4 h-4 text-amber-700 transition-transform ${
-                    expandedExpenses.has(branch.id) ? 'rotate-180' : ''
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* Expense Breakdown */}
-            {expandedExpenses.has(branch.id) && metrics.expenseBreakdown && Object.keys(metrics.expenseBreakdown).length > 0 && (
-              <div className="p-3 bg-amber-50 rounded-lg mb-4 border border-amber-200">
-                <p className="text-xs font-semibold text-amber-900 mb-2">Expense Breakdown</p>
-                <div className="space-y-2">
-                  {Object.entries(metrics.expenseBreakdown).map(([category, amount]: [string, any]) => (
-                    <div key={category} className="flex items-center justify-between text-sm">
-                      <span className="text-amber-700">{getCategoryLabel(category)}</span>
-                      <span className="font-semibold text-neutral-900">KES {(amount || 0).toLocaleString()}</span>
-                    </div>
-                  ))}
+                  <Badge
+                    variant={branch.status === 'open' ? 'default' : 'secondary'}
+                    className={
+                      branch.status === 'open'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-neutral-200 text-neutral-600'
+                    }
+                  >
+                    {branch.status?.toUpperCase() || 'UNKNOWN'}
+                  </Badge>
                 </div>
               </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => handleManageClick(branch)}
-              >
-                View Details
-              </Button>
-              <Button
-                className="flex-1 bg-red-700 hover:bg-red-800"
-                onClick={() => handleManageClick(branch)}
-              >
-                Manage
-              </Button>
-            </div>
-          </Card>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <TrendingUp className="w-5 h-5 text-green-700 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-neutral-900">
+                    KES {(metrics.salesTotal || 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-neutral-600">{isSelectedDateToday ? 'Today\'s Sales' : 'Sales'}</p>
+                </div>
+
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <Users className="w-5 h-5 text-blue-700 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-neutral-900">{branch.staffCount || 0}</p>
+                  <p className="text-xs text-neutral-600">Staff Members</p>
+                </div>
+
+                <div className="text-center p-3 bg-red-50 rounded-lg">
+                  <Package className="w-5 h-5 text-red-700 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-neutral-900">{metrics.lowStockCount}</p>
+                  <p className="text-xs text-neutral-600">Low Stock</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="p-3 bg-neutral-50 rounded-lg">
+                  <p className="text-xs text-neutral-500">Opening Stock</p>
+                  <p className="text-lg font-semibold text-neutral-900">
+                    {metrics.openingStock.toLocaleString()} kg
+                  </p>
+                </div>
+                <div className="p-3 bg-neutral-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-neutral-500">Closing Stock</p>
+                    {showActive && (
+                      <Badge className="text-[10px] bg-emerald-100 text-emerald-700">ACTIVE</Badge>
+                    )}
+                  </div>
+                  <p className="text-lg font-semibold text-neutral-900">
+                    {metrics.closingStock.toLocaleString()} kg
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg mb-4 cursor-pointer hover:bg-amber-100 transition-colors" onClick={() => toggleExpenseDetails(branch.id)}>
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-amber-700" />
+                  <p className="text-sm text-amber-700">Expenses</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-semibold text-neutral-900">
+                    KES {metrics.expensesTotal.toLocaleString()}
+                  </p>
+                  <ChevronDown
+                    className={`w-4 h-4 text-amber-700 transition-transform ${expandedExpenses.has(branch.id) ? 'rotate-180' : ''
+                      }`}
+                  />
+                </div>
+              </div>
+
+              {/* Expense Breakdown */}
+              {expandedExpenses.has(branch.id) && metrics.expenseBreakdown && Object.keys(metrics.expenseBreakdown).length > 0 && (
+                <div className="p-3 bg-amber-50 rounded-lg mb-4 border border-amber-200">
+                  <p className="text-xs font-semibold text-amber-900 mb-2">Expense Breakdown</p>
+                  <div className="space-y-2">
+                    {Object.entries(metrics.expenseBreakdown).map(([category, amount]: [string, any]) => (
+                      <div key={category} className="flex items-center justify-between text-sm">
+                        <span className="text-amber-700">{getCategoryLabel(category)}</span>
+                        <span className="font-semibold text-neutral-900">KES {(amount || 0).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleManageClick(branch)}
+                >
+                  View Details
+                </Button>
+                <Button
+                  className="flex-1 bg-red-700 hover:bg-red-800"
+                  onClick={() => handleManageClick(branch)}
+                >
+                  Manage
+                </Button>
+              </div>
+            </Card>
           );
         })}
       </div>
@@ -489,7 +518,10 @@ export function BranchManagement() {
         <Card className="p-6 bg-gradient-to-br from-neutral-900 to-red-950 text-white">
           <h3 className="text-sm mb-2 opacity-90">Total Revenue Today</h3>
           <p className="text-3xl font-bold">
-            KES {branches.reduce((sum, b) => sum + (b.todaySales || 0), 0).toLocaleString()}
+            KES {branches.reduce((sum, b) => {
+              const metrics = branchMetrics[b.id];
+              return sum + (metrics?.salesTotal || 0);
+            }, 0).toLocaleString()}
           </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-neutral-900 to-red-950 text-white">
