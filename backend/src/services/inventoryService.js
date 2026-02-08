@@ -32,16 +32,22 @@ export const recordStockEntry = async (productId, branchId, openingStock, date, 
 };
 
 export const recordClosingStock = async (productId, branchId, closingStock, date) => {
+  console.log(`[InventoryService] Recording closing stock: Product=${productId}, Branch=${branchId}, Date=${date}, Stock=${closingStock}`);
   const { data, error } = await supabase
     .from('stock_history')
-    .update({ closing_stock: closingStock })
-    .eq('product_id', productId)
-    .eq('branch_id', branchId)
-    .eq('date', date)
+    .upsert({
+      product_id: productId,
+      branch_id: branchId,
+      date,
+      closing_stock: closingStock
+    }, { onConflict: 'product_id,branch_id,date' })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[InventoryService] Upsert error:', error);
+    throw error;
+  }
   return data;
 };
 

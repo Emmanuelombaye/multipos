@@ -237,7 +237,7 @@ export function AdminFinancials() {
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="pl-10 bg-white"
-                title="Date is in UTC"
+                title="Date is in Local Time"
               />
             </div>
           </div>
@@ -289,7 +289,7 @@ export function AdminFinancials() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-xs font-bold text-neutral-500 uppercase">Expected vs Actual Sales</p>
-            <p className="text-sm text-neutral-600">Calculated from opening and closing stock for {selectedDate} (UTC)</p>
+            <p className="text-sm text-neutral-600">Calculated from opening and closing stock for {selectedDate} (Local)</p>
           </div>
           <Badge variant="outline">Stock Reconciliation</Badge>
         </div>

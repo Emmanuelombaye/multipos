@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, Store, Users, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader } from 'lucide-react';
 import { Card } from './ui/card';
@@ -31,7 +31,7 @@ export function AdminDashboard() {
       if (!silent) {
         setLoading(true);
       }
-      
+
       // Fetch dashboard data
       const dashboard = await apiClient.getAdminDashboard();
       setDashboardData(dashboard);
@@ -45,10 +45,15 @@ export function AdminDashboard() {
         const days = timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 90;
         const endDate = new Date();
         const startDate = new Date(endDate);
-        startDate.setDate(endDate.getDate() - days);
+        startDate.setDate(endDate.getDate() - (days - 1));
 
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
+        // Create local ISO range for the entire timeframe
+        const localStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+        const localEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+        const startISO = localStart.toISOString();
+        const endISO = localEnd.toISOString();
+        const startDateStr = startISO.split('T')[0]; // For fallback
+        const endDateStr = endISO.split('T')[0];
 
         // Fetch data from ALL branches and aggregate
         const allBranchData = await Promise.all(
@@ -56,8 +61,8 @@ export function AdminDashboard() {
             try {
               console.log(`Fetching data for branch: ${branch.name} (${branch.id})`);
               const [metrics, expenses, lowStock, transactions] = await Promise.all([
-                apiClient.getMetrics(branch.id, startDateStr, endDateStr),
-                apiClient.getExpensesByCategory(branch.id, startDateStr, endDateStr),
+                apiClient.getMetrics(branch.id, startISO, endISO),
+                apiClient.getExpensesByCategory(branch.id, startISO, endISO),
                 apiClient.getLowStockProducts(branch.id),
                 apiClient.getTransactionsByBranch(branch.id, 10)
               ]);
@@ -154,8 +159,18 @@ export function AdminDashboard() {
 
   const totalSales = dashboardData?.total_sales || 0;
   const activeBranches = branchesData.filter((b: any) => b.status === 'open').length;
-  const totalStaff = dashboardData?.total_staff || 0;
+  const totalStaff = branchesData.reduce((sum, b) => sum + (b.staffCount || 0), 0) || dashboardData?.total_staff || 0;
   const alertCount = dashboardData?.low_stock_count || lowStockProducts.length;
+
+  // Calculate real growth (Simple comparison of today vs yesterday for the KPI card)
+  const growthStats = useMemo(() => {
+    if (chartData.length < 2) return { percent: 0, isPositive: true };
+    const latest = chartData[chartData.length - 1].sales || 0;
+    const previous = chartData[chartData.length - 2].sales || 0;
+    if (previous === 0) return { percent: latest > 0 ? 100 : 0, isPositive: true };
+    const diff = ((latest - previous) / previous) * 100;
+    return { percent: Math.abs(Math.round(diff)), isPositive: diff >= 0 };
+  }, [chartData]);
 
   return (
     <div className="space-y-6 p-4 md:p-6 bg-neutral-50">
@@ -190,8 +205,14 @@ export function AdminDashboard() {
                 KES {(totalSales || 0).toLocaleString()}
               </p>
               <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-green-600">+8.2% this month</span>
+                {growthStats.isPositive ? (
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                ) : (
+                  <TrendingDown className="w-4 h-4 text-red-600" />
+                )}
+                <span className={`text-sm ${growthStats.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {growthStats.isPositive ? '+' : '-'}{growthStats.percent}% vs previous {timeframe === 'week' ? 'day' : timeframe === 'month' ? 'week' : 'month'}
+                </span>
               </div>
             </div>
             <div className="p-3 bg-green-50 rounded-full">
@@ -207,7 +228,9 @@ export function AdminDashboard() {
               <p className="text-2xl font-bold text-neutral-900">
                 {activeBranches} / {branchesData.length}
               </p>
-              <p className="text-sm text-blue-600 mt-2 font-medium">All operational</p>
+              <p className={`text-sm mt-2 font-medium ${activeBranches === branchesData.length ? 'text-blue-600' : 'text-amber-600'}`}>
+                {activeBranches === branchesData.length ? 'All operational' : `${branchesData.length - activeBranches} branches closed`}
+              </p>
             </div>
             <div className="p-3 bg-blue-50 rounded-full">
               <Store className="w-6 h-6 text-blue-600" />

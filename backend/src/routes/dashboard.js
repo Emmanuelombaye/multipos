@@ -39,19 +39,17 @@ router.get('/admin', authorize(['admin']), async (req, res, next) => {
 
     stats.total_staff = allStaff?.length || 0;
 
-    // Get low stock products count across all branches
-    const { data: allLowStock } = await supabase
-      .from('stock_history')
-      .select('*, products(*)')
-      .lt('closing_kg', 5); // Low stock threshold
+    // Get low stock products count across all branches using dynamic thresholds
+    const { data: allBranchStock } = await supabase
+      .from('branch_stock')
+      .select('*, products(low_stock_threshold)');
 
-    const uniqueLowStockProducts = new Set(
-      (allLowStock || [])
-        .filter(item => item.products?.low_stock_threshold && item.closing_kg < item.products.low_stock_threshold)
-        .map(item => item.product_id)
-    );
+    const lowStockItems = (allBranchStock || []).filter(item => {
+      const threshold = item.products?.low_stock_threshold || 5;
+      return item.current_stock < threshold;
+    });
 
-    stats.low_stock_count = uniqueLowStockProducts.size;
+    stats.low_stock_count = new Set(lowStockItems.map(item => item.product_id)).size;
 
     // Get recent transactions
     const { data: recentTransactions } = await supabase
@@ -142,12 +140,9 @@ router.get('/metrics/:branchId', async (req, res, next) => {
       return;
     }
 
-    // Check if the dates already contain time/offset
-    const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
-    const cleanDate = (d) => d && d.split('T')[0];
-
-    const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
-    const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
+    // Always treat these as ISO strings or local-start-of-day strings
+    const startISO = startDate.includes('T') ? startDate : `${startDate}T00:00:00Z`;
+    const endISO = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999Z`;
 
     const { data: transactions } = await supabase
       .from('transactions')

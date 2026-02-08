@@ -140,7 +140,7 @@ export function ReportsScreen() {
 
       const expenseCategories = await Promise.all(
         safeBranches.map(async (branch) => {
-          const categories = await apiClient.getExpensesByCategory(branch.id, startDateStr, endDateStr);
+          const categories = await apiClient.getExpensesByCategory(branch.id, startISO, endISO);
           return categories || {};
         })
       );

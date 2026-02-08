@@ -33,6 +33,7 @@ router.post('/entry', authorize(['manager', 'admin']), async (req, res, next) =>
 router.put('/entry/closing', authorize(['cashier', 'manager', 'admin']), async (req, res, next) => {
   try {
     const { productId, branchId, closingStock, date } = req.body;
+    console.log('[InventoryRoute] PUT /entry/closing', { productId, branchId, closingStock, date });
 
     if (!productId || !branchId || closingStock === undefined || !date) {
       res.status(400).json({ error: 'productId, branchId, closingStock, and date are required' });

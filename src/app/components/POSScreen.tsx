@@ -260,7 +260,14 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
     setIsProcessing(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const getLocalDateString = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      const today = getLocalDateString();
 
       // Save closing stock for all products with entered values
       const responses = await Promise.all(
@@ -297,32 +304,41 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
     <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] gap-4 p-4 bg-neutral-50 overflow-hidden">
       {/* Product Selection Area */}
       <div className="flex-1 overflow-y-auto pr-2">
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold text-neutral-900">Point of Sale</h2>
-            <p className="text-neutral-600">Cashier: {cashierName}</p>
+        <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-neutral-200 shadow-sm lg:bg-transparent lg:border-none lg:shadow-none lg:p-0">
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <div>
+              <h2 className="text-xl font-bold text-neutral-900">Point of Sale</h2>
+              <p className="text-xs text-neutral-600">Cashier: {cashierName}</p>
+            </div>
+            {!isOnline && (
+              <div className="px-2 py-1 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 md:hidden">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                OFFLINE
+              </div>
+            )}
           </div>
           {!isOnline && (
-            <div className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+            <div className="hidden md:flex px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200 items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
               Offline mode - sales will sync when online
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 md:flex gap-2 w-full md:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => fetchProducts()}
               disabled={isLoadingProducts}
-              className="text-neutral-700 border-neutral-200"
+              className="text-neutral-700 border-neutral-200 h-10 px-2 sm:px-4"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`w-4 h-4 mr-1 sm:mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
+              <span className="text-xs sm:text-sm">Refresh</span>
             </Button>
             <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="text-red-700 border-red-200">
-                  <Receipt className="w-4 h-4 mr-2" />
-                  Log Expense
+                <Button variant="outline" className="text-red-700 border-red-200 h-10 px-2 sm:px-4">
+                  <Receipt className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Expense</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -372,9 +388,9 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
             <Dialog open={showStockDialog} onOpenChange={setShowStockDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="text-neutral-700">
-                  <PackageSearch className="w-4 h-4 mr-2" />
-                  Stock Count
+                <Button variant="outline" className="text-neutral-700 border-neutral-200 h-10 px-2 sm:px-4">
+                  <PackageSearch className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Stock</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -424,17 +440,17 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
         {/* Product Grid */}
         {isLoadingProducts ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center py-20">
             <Loader className="w-8 h-8 animate-spin text-red-700" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-20 lg:mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mb-24 md:mb-4">
             {products.map((product) => (
               <Card
                 key={product.id}
                 className={`p-4 cursor-pointer transition-all hover:shadow-lg ${selectedProduct === product.id
-                    ? 'ring-2 ring-red-700 bg-red-50'
-                    : 'hover:border-red-200'
+                  ? 'ring-2 ring-red-700 bg-red-50'
+                  : 'hover:border-red-200'
                   } ${product.stock < 5 ? 'opacity-60' : ''}`}
                 onClick={() => setSelectedProduct(product.id)}
               >
@@ -538,21 +554,21 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
             cart.map((item) => (
               <div key={item.productId} className="p-3 bg-gradient-to-r from-neutral-50 to-neutral-100 rounded-lg border border-neutral-200 hover:border-red-300 transition-colors">
                 {/* Product Name & Price */}
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-1">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{item.image}</span>
-                      <div>
-                        <h4 className="font-bold text-neutral-900 text-sm leading-tight">
+                      <span className="text-xl">{item.image}</span>
+                      <div className="overflow-hidden">
+                        <h4 className="font-bold text-neutral-900 text-xs sm:text-sm truncate">
                           {item.productName}
                         </h4>
-                        <p className="text-xs text-neutral-600">
+                        <p className="text-[10px] text-neutral-600">
                           KES {item.pricePerKg}/kg
                         </p>
                       </div>
                     </div>
                   </div>
-                  <p className="font-bold text-red-700 text-right ml-2">
+                  <p className="font-bold text-red-700 text-xs sm:text-sm whitespace-nowrap ml-2">
                     KES {item.total.toLocaleString()}
                   </p>
                 </div>
@@ -657,7 +673,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
       {/* Hidden Debug Info (Pressing 'D' to see is too complex, just show small at bottom for now) */}
       <div className="fixed bottom-1 left-1 text-[8px] text-neutral-300 pointer-events-none opacity-50 z-50">
-        API: {import.meta.env.VITE_API_URL || 'Localhost'} | Branch: {branchId} | ID: {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id.slice(0, 5) : 'Anon'}
+        API: {(import.meta as any).env.VITE_API_URL || 'Localhost'} | Branch: {branchId} | ID: {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id.slice(0, 5) : 'Anon'}
       </div>
     </div>
   );

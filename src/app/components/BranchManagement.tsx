@@ -538,7 +538,9 @@ export function BranchManagement() {
         </Card>
         <Card className="p-6 bg-gradient-to-br from-neutral-900 to-red-950 text-white">
           <h3 className="text-sm mb-2 opacity-90">Total Staff</h3>
-          <p className="text-3xl font-bold">{branchStaff.length} Members</p>
+          <p className="text-3xl font-bold">
+            {branches.reduce((sum, b) => sum + (b.staffCount || 0), 0)} Members
+          </p>
         </Card>
       </div>
 
