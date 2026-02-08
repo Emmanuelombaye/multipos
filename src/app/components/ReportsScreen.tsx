@@ -7,10 +7,36 @@ import { Button } from './ui/button';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { apiClient } from '../api/client';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
 
 type Timeframe = 'day' | '3day' | 'week' | 'month' | '3month';
 
 export function ReportsScreen() {
+    // PDF Export Handler
+    const handleExportReport = () => {
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text('Reports & Analytics', 14, 18);
+      doc.setFontSize(12);
+      doc.text(`Timeframe: ${getTimeframeLabel(timeframe)}`, 14, 28);
+      doc.text(`Total Sales: KES ${totalSales.toLocaleString()}`, 14, 38);
+      doc.text(`Total Expenses: KES ${totalExpenses.toLocaleString()}`, 14, 48);
+      doc.text(`Net Growth: KES ${netGrowth.toLocaleString()}`, 14, 58);
+      doc.text(`Best Branch: ${bestBranchName || 'N/A'}`, 14, 68);
+
+      doc.setFontSize(14);
+      doc.text('Branch Sales:', 14, 80);
+      branchSalesComparison.forEach((b, i) => {
+        doc.text(`${b.branch}: KES ${b.sales.toLocaleString()}`, 14, 90 + i * 10);
+      });
+
+      doc.text('Expense Distribution:', 14, 100 + branchSalesComparison.length * 10);
+      categoryDistribution.forEach((c, i) => {
+        doc.text(`${c.name}: KES ${c.value.toLocaleString()} (${c.percentage}%)`, 14, 110 + branchSalesComparison.length * 10 + i * 10);
+      });
+
+      doc.save('report.pdf');
+    };
   const [timeframe, setTimeframe] = useState<Timeframe>('week');
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<any[]>([]);
@@ -56,8 +82,11 @@ export function ReportsScreen() {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (days - 1));
 
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
+      // Use local date (YYYY-MM-DD) to avoid timezone issues
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const toLocalDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const startDateStr = toLocalDate(startDate);
+      const endDateStr = toLocalDate(endDate);
 
       const metricsByBranch = await Promise.all(
         safeBranches.map(async (branch) => {
@@ -175,7 +204,7 @@ export function ReportsScreen() {
             <Calendar className="w-4 h-4 mr-2" />
             Filter Dates
           </Button>
-          <Button className="bg-red-700 hover:bg-red-800">
+          <Button className="bg-red-700 hover:bg-red-800" onClick={handleExportReport}>
             <FileText className="w-4 h-4 mr-2" />
             Export Report
           </Button>
