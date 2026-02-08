@@ -1,0 +1,124 @@
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiClient } from './client';
+import { toast } from 'sonner';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'manager' | 'cashier';
+  branchId?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  isLoggedIn: () => boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('token');
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Validate token on mount
+  useEffect(() => {
+    const validateToken = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedToken && storedUser) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          return;
+        }
+        try {
+          // Try to make an authenticated request to validate token
+          await apiClient.getBranches();
+          // Token is valid, keep the user logged in
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          // Token is invalid or expired, clear everything
+          console.log('Token validation failed, logging out');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('userName');
+          setToken(null);
+          setUser(null);
+        }
+      }
+    };
+
+    validateToken();
+    const handleOnline = () => {
+      validateToken();
+    };
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const response = await apiClient.login(email, password);
+      
+      const userData = response.user;
+      setUser(userData);
+      setToken(response.token);
+
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('userName', userData.name);
+
+      toast.success(`Welcome, ${userData.name}!`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Login failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userName');
+    toast.success('Logged out successfully');
+  };
+
+  const isLoggedIn = () => {
+    return !!token && !!user;
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout, isLoggedIn }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

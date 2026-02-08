@@ -1,0 +1,26 @@
+{
+  "name": "butchery-pos-backend",
+  "version": "1.0.0",
+  "description": "Multi-Branch Butchery POS Backend",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "build": "echo 'Build step for Node.js'",
+    "seed": "node src/db/seed.js",
+    "seed:realistic": "node src/db/seed-realistic.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.38.4",
+    "bcryptjs": "2.4.3",
+    "cors": "2.8.5",
+    "dotenv": "16.3.1",
+    "express": "4.18.2",
+    "jsonwebtoken": "8.5.1",
+    "uuid": "9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

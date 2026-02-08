@@ -1,0 +1,24 @@
+{
+  "name": "EdenDropInvestment Management System",
+  "short_name": "EdenDrop POS",
+  "description": "Multi-Branch EdenDropInvestment Management System - POS, Inventory & Analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7f1d1d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/edendroplogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/edendroplogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
