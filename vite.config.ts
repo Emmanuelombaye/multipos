@@ -28,4 +28,8 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 600,
   },
+  server: {
+    // Ensure SPA fallback for dev
+    historyApiFallback: true,
+  },
 })
