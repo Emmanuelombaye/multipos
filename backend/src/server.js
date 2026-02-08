@@ -43,8 +43,16 @@ app.get('/health', (req, res) => {
 // Public routes
 app.use('/api/auth', authRoutes);
 
-// Protected routes (require authentication)
-app.use('/api/branches', authenticate, branchRoutes);
+// Public GET /api/branches, protect others
+import branchesRouter from './routes/branches.js';
+app.use('/api/branches', (req, res, next) => {
+  if (req.method === 'GET' && req.path === '/') {
+    // Public: allow GET /api/branches
+    return branchesRouter(req, res, next);
+  }
+  // Protected: all other /api/branches routes
+  return authenticate(req, res, () => branchesRouter(req, res, next));
+});
 app.use('/api/products', authenticate, productRoutes);
 app.use('/api/transactions', authenticate, transactionRoutes);
 app.use('/api/inventory', authenticate, inventoryRoutes);
