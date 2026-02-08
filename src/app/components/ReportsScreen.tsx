@@ -56,12 +56,12 @@ export function ReportsScreen() {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (days - 1));
 
-      const startISO = `${startDate.toISOString().split('T')[0]}T00:00:00.000Z`;
-      const endISO = `${endDate.toISOString().split('T')[0]}T23:59:59.999Z`;
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
 
       const metricsByBranch = await Promise.all(
         safeBranches.map(async (branch) => {
-          const metrics = await apiClient.getMetrics(branch.id, startISO, endISO);
+          const metrics = await apiClient.getMetrics(branch.id, startDateStr, endDateStr);
           return { branch, metrics: metrics || {} };
         })
       );
@@ -105,7 +105,7 @@ export function ReportsScreen() {
 
       const expenseCategories = await Promise.all(
         safeBranches.map(async (branch) => {
-          const categories = await apiClient.getExpensesByCategory(branch.id, startISO, endISO);
+          const categories = await apiClient.getExpensesByCategory(branch.id, startDateStr, endDateStr);
           return categories || {};
         })
       );

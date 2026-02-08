@@ -47,8 +47,8 @@ export function AdminDashboard() {
         const startDate = new Date(endDate);
         startDate.setDate(endDate.getDate() - days);
 
-        const startISO = `${startDate.toISOString().split('T')[0]}T00:00:00.000Z`;
-        const endISO = `${endDate.toISOString().split('T')[0]}T23:59:59.999Z`;
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
 
         // Fetch data from ALL branches and aggregate
         const allBranchData = await Promise.all(
@@ -56,8 +56,8 @@ export function AdminDashboard() {
             try {
               console.log(`Fetching data for branch: ${branch.name} (${branch.id})`);
               const [metrics, expenses, lowStock, transactions] = await Promise.all([
-                apiClient.getMetrics(branch.id, startISO, endISO),
-                apiClient.getExpensesByCategory(branch.id, startISO, endISO),
+                apiClient.getMetrics(branch.id, startDateStr, endDateStr),
+                apiClient.getExpensesByCategory(branch.id, startDateStr, endDateStr),
                 apiClient.getLowStockProducts(branch.id),
                 apiClient.getTransactionsByBranch(branch.id, 10)
               ]);
