@@ -2,7 +2,14 @@ import axios, { AxiosInstance } from 'axios';
 import { toast } from 'sonner';
 import { enqueueOfflineAction, getOfflineQueue, removeOfflineActions } from './offlineQueue';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Fix ImportMeta typing for Vite env
+interface ImportMetaEnv {
+  VITE_API_URL?: string;
+}
+interface ImportMeta {
+  env: ImportMetaEnv;
+}
+const API_URL = (import.meta as ImportMeta).env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface LoginResponse {
   token: string;
@@ -160,7 +167,8 @@ class APIClient {
 
   // Branches
   async getBranches(): Promise<any[]> {
-    return this.cachedGet('/branches', 5000); // Shorter cache for branch list
+    const data = await this.cachedGet('/branches', 5000);
+    return Array.isArray(data) ? data : [];
   }
 
   async getBranch(id: string): Promise<any> {
