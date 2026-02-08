@@ -92,8 +92,8 @@ export function AdminFinancials() {
 
     if (branchIds.length === 0) return;
 
-    const startDate = `${selectedDate}T00:00:00.000Z`;
-    const endDate = `${selectedDate}T23:59:59.999Z`;
+    const startDateStr = selectedDate.split('T')[0];
+    const endDateStr = selectedDate.split('T')[0];
 
     try {
       if (!silent) {
@@ -103,9 +103,9 @@ export function AdminFinancials() {
       const results = await Promise.all(
         branchIds.map(async (branchId) => {
           const [expenses, transactions, stockHistory] = await Promise.all([
-            apiClient.getExpensesByDateRange(branchId, startDate, endDate),
-            apiClient.getTransactionsByDateRange(branchId, startDate, endDate),
-            apiClient.getStockHistoryByDate(branchId, selectedDate),
+            apiClient.getExpensesByDateRange(branchId, startDateStr, endDateStr),
+            apiClient.getTransactionsByDateRange(branchId, startDateStr, endDateStr),
+            apiClient.getStockHistoryByDate(branchId, startDateStr),
           ]);
 
           return {

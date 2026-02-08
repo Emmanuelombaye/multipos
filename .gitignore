@@ -1,7 +1,5 @@
 node_modules/
 dist/
-.env
-.env.local
 .env.*.local
 *.log
 *.pid
@@ -20,3 +18,4 @@ out/
 build/
 coverage/
 .eslintcache
+config.bat
