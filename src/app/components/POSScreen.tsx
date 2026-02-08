@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
 import { apiClient } from '../api/client';
@@ -53,12 +54,10 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   const [expenseDesc, setExpenseDesc] = useState('');
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
 
-  // Stock count states
+  // Dialog states
   const [showStockDialog, setShowStockDialog] = useState(false);
+  const [showCartSheet, setShowCartSheet] = useState(false);
   const [closingStocks, setClosingStocks] = useState<{ [id: string]: string }>({});
-
-  // Mobile View Toggle ('menu' or 'cart')
-  const [mobileView, setMobileView] = useState<'menu' | 'cart'>('menu');
 
   // Fetch products with stock
   useEffect(() => {
@@ -304,43 +303,22 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   const cartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] gap-0 lg:gap-4 p-0 lg:p-4 bg-neutral-50 overflow-hidden pb-16 lg:pb-0">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] gap-0 lg:gap-4 p-0 lg:p-4 bg-neutral-50 overflow-hidden relative">
 
-      {/* MOBILE ONLY: High Visibility Header & Tab Switcher */}
-      <div className="flex lg:hidden flex-col bg-white border-b shadow-sm sticky top-0 z-20">
-        <div className="bg-blue-600 text-white text-[10px] py-0.5 text-center font-bold tracking-widest uppercase">
-          New Layout Active (v3.0) - Use Tabs Below
-        </div>
-        <div className="flex p-1.5 gap-1.5">
-          <button
-            onClick={() => setMobileView('menu')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-sm font-bold transition-all ${mobileView === 'menu' ? 'bg-red-700 text-white shadow-md scale-[1.02]' : 'bg-neutral-100 text-neutral-500'
-              }`}
-          >
-            <Store className="w-4 h-4" />
-            1. PRODUCTS
-          </button>
-          <button
-            onClick={() => setMobileView('cart')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-sm font-bold transition-all ${mobileView === 'cart' ? 'bg-red-700 text-white shadow-md scale-[1.02]' : 'bg-neutral-100 text-neutral-500'
-              }`}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            2. CART ({cart.length})
-          </button>
-        </div>
+      {/* GLOBAL CACHE STATUS (v4.0.0) */}
+      <div className="hidden lg:flex fixed bottom-2 right-2 bg-neutral-900/10 text-neutral-500 text-[8px] px-1 rounded z-50">
+        v4.0.0 (Mobile Optimized)
       </div>
 
       {/* Product Selection Area */}
-      <div className={`flex-1 overflow-y-auto p-2 lg:p-0 pr-0 lg:pr-2 ${mobileView === 'menu' ? 'block' : 'hidden lg:block'}`}>
+      <div className="flex-1 overflow-y-auto p-3 lg:p-0">
         <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-neutral-200 shadow-sm lg:bg-transparent lg:border-none lg:shadow-none lg:p-0">
           <div className="flex items-center justify-between w-full md:w-auto">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-neutral-900">Point of Sale</h2>
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px] h-4 px-1 lg:hidden">v2.0 Mobile</Badge>
               </div>
-              <p className="text-xs text-neutral-600">Cashier: {cashierName}</p>
+              <p className="text-xs text-neutral-600">Branch: {branchId} | Cashier: {cashierName}</p>
             </div>
             {!isOnline && (
               <div className="px-2 py-1 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 md:hidden">
@@ -557,8 +535,116 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
         )}
       </div>
 
-      {/* Cart & Checkout Panel */}
-      <Card className={`w-full lg:w-96 p-3 lg:p-4 flex flex-col h-full overflow-hidden bg-white shadow-lg border-t-4 border-red-700 lg:border-t-0 ${mobileView === 'cart' ? 'block' : 'hidden lg:flex'}`}>
+      {/* MOBILE FLOATING CHECKOUT BAR */}
+      {cart.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t-2 border-red-700 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-40 animate-in slide-in-from-bottom duration-300">
+          <Button
+            onClick={() => setShowCartSheet(true)}
+            className="w-full h-14 bg-red-700 hover:bg-red-800 shadow-lg flex items-center justify-between px-6 rounded-xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <ShoppingCart className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1">View Cart</p>
+                <p className="text-lg font-bold text-white leading-none">{cart.length} Products</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1 text-right">Total Payne</p>
+              <p className="text-xl font-bold text-white leading-none">KES {cartTotal.toLocaleString()}</p>
+            </div>
+          </Button>
+        </div>
+      )}
+
+      {/* MOBILE FULL-SCREEN CART SHEET */}
+      <Sheet open={showCartSheet} onOpenChange={setShowCartSheet}>
+        <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-[2rem] border-t-0 bg-neutral-50 overflow-hidden flex flex-col">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-neutral-300 rounded-full" />
+
+          <div className="p-6 pt-10 bg-white border-b flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-100 p-3 rounded-2xl">
+                <ShoppingCart className="w-6 h-6 text-red-700" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-neutral-900">Checkout</h3>
+                <p className="text-sm text-neutral-500">{cart.length} items in your tray</p>
+              </div>
+            </div>
+            <Button variant="ghost" className="text-red-700 font-bold" onClick={clearCart}>Clear</Button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {cart.map((item) => (
+              <div key={item.productId} className="p-4 bg-white rounded-2xl border-2 border-neutral-100 shadow-sm flex flex-col gap-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{item.image}</span>
+                    <div>
+                      <h4 className="font-bold text-neutral-900 text-lg">{item.productName}</h4>
+                      <p className="text-sm text-neutral-500">KES {item.pricePerKg}/kg</p>
+                    </div>
+                  </div>
+                  <p className="font-bold text-red-700 text-lg">KES {item.total.toLocaleString()}</p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center gap-4 bg-neutral-100 p-1 rounded-xl">
+                    <Button size="icon" variant="ghost" className="h-10 w-10 text-red-700" onClick={() => updateQuantity(item.productId, -0.5)}>
+                      <Minus className="w-5 h-5" />
+                    </Button>
+                    <span className="font-bold text-xl w-14 text-center">{item.quantity.toFixed(2)}</span>
+                    <Button size="icon" variant="ghost" className="h-10 w-10 text-green-700" onClick={() => updateQuantity(item.productId, 0.5)}>
+                      <Plus className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <Button size="icon" variant="ghost" className="text-neutral-400" onClick={() => removeFromCart(item.productId)}>
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-6 bg-white border-t space-y-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-neutral-500 font-bold text-lg uppercase tracking-wider">Grand Total</span>
+              <span className="text-3xl font-black text-red-700">KES {cartTotal.toLocaleString()}</span>
+            </div>
+
+            <Button
+              onClick={() => { handlePayment('cash'); setShowCartSheet(false); }}
+              className="w-full h-16 bg-green-700 hover:bg-green-800 text-white text-xl font-bold rounded-2xl shadow-lg shadow-green-200"
+            >
+              <Banknote className="w-6 h-6 mr-3" />
+              Pay Cash
+            </Button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => { handlePayment('mpesa'); setShowCartSheet(false); }}
+                className="h-14 bg-[#39B54A] hover:bg-[#2e933c] text-white font-bold rounded-2xl"
+              >
+                <Smartphone className="w-5 h-5 mr-2" />
+                M-Pesa
+              </Button>
+              <Button
+                onClick={() => { handlePayment('card'); setShowCartSheet(false); }}
+                className="h-14 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-2xl"
+              >
+                <CreditCard className="w-5 h-5 mr-2" />
+                Card
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Cart & Checkout Panel (DESKTOP) */}
+      <Card className="hidden lg:flex w-96 p-4 flex-col h-full overflow-hidden bg-white shadow-lg border-t-0">
         <div className="flex items-center justify-between mb-2 lg:mb-4 pb-2 lg:pb-3 border-b">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 lg:w-6 lg:h-6 text-red-700" />

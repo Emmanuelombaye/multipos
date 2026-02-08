@@ -43,20 +43,32 @@ export default function App() {
   const [branchName, setBranchName] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // CACHE BUSTER: Force reload if version mismatch
+  const APP_VERSION = "4.0.0"; // Final Mobile Overhaul Version
+  useEffect(() => {
+    const cachedVersion = localStorage.getItem('app_version');
+    if (cachedVersion !== APP_VERSION) {
+      console.log(`[CacheBuster] Version mismatch: ${cachedVersion} vs ${APP_VERSION}. Forcing reload...`);
+      localStorage.setItem('app_version', APP_VERSION);
+      // Hard reload from server
+      window.location.reload();
+    }
+  }, []);
+
   // Initialize user data from auth context
   useEffect(() => {
     if (user) {
       setUserRole(user.role || 'cashier');
       setSelectedBranch(user.branchId || '');
       setUserName(user.name || user.email || 'User');
-      
+
       // Set default screen based on role
       if (user.role === 'cashier') {
         setCurrentScreen('pos');
       } else {
         setCurrentScreen('dashboard');
       }
-      
+
       // Load branch name if branchId exists
       if (user.branchId) {
         loadBranchName(user.branchId);
@@ -93,12 +105,12 @@ export default function App() {
       setUserName(userData.name || userData.email || 'User');
       setUserRole(userData.role || role);
       setSelectedBranch(userData.branchId || branchId);
-      
+
       // Load branch name if branchId exists
       if (userData.branchId) {
         loadBranchName(userData.branchId);
       }
-      
+
       // Set default screen based on role
       if (userData.role === 'cashier') {
         setCurrentScreen('pos');
@@ -236,11 +248,10 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => setCurrentScreen(item.id as Screen)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                  currentScreen === item.id
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${currentScreen === item.id
                     ? 'border-red-500 text-white bg-white/5'
                     : 'border-transparent text-neutral-300 hover:text-white hover:bg-white/5'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="font-medium">{item.label}</span>
@@ -263,11 +274,10 @@ export default function App() {
                     setCurrentScreen(item.id as Screen);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    currentScreen === item.id
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentScreen === item.id
                       ? 'bg-red-50 text-red-700 font-semibold'
                       : 'text-neutral-700 hover:bg-neutral-100'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>
@@ -293,11 +303,10 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setCurrentScreen(item.id as Screen)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-3 ${
-                    currentScreen === item.id
+                  className={`flex-1 flex flex-col items-center gap-1 py-3 ${currentScreen === item.id
                       ? 'text-red-700'
                       : 'text-neutral-500'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-6 h-6" />
                   <span className="text-xs font-medium">{item.label}</span>
