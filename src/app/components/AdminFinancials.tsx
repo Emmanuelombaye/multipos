@@ -97,9 +97,11 @@ export function AdminFinancials() {
 
     if (branchIds.length === 0) return;
 
-    // Use UTC midnight for start/end
-    const startDate = `${selectedDate}T00:00:00.000Z`;
-    const endDate = `${selectedDate}T23:59:59.999Z`;
+    // Safeguard: ensure selectedDate is valid
+    const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate);
+    const safeDate = isValidDate ? selectedDate : getUTCDateString();
+    const startDate = `${safeDate}T00:00:00.000Z`;
+    const endDate = `${safeDate}T23:59:59.999Z`;
 
     try {
       if (!silent) {
