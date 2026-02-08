@@ -21,7 +21,12 @@ import { apiClient } from '../api/client';
 
 export function AdminFinancials() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  // Always use UTC for date selection
+  const getUTCDateString = () => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  };
+  const [selectedDate, setSelectedDate] = useState<string>(getUTCDateString());
   const [branches, setBranches] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -92,6 +97,7 @@ export function AdminFinancials() {
 
     if (branchIds.length === 0) return;
 
+    // Use UTC midnight for start/end
     const startDate = `${selectedDate}T00:00:00.000Z`;
     const endDate = `${selectedDate}T23:59:59.999Z`;
 
@@ -187,6 +193,7 @@ export function AdminFinancials() {
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 mb-1">Financial & Stock Report</h1>
           <p className="text-neutral-600">Daily reconciliation for {currentBranchName}</p>
+          <p className="text-xs text-neutral-500 mt-1">All dates/times shown in UTC</p>
         </div>
         <Button onClick={handleExportPDF} className="bg-red-700 hover:bg-red-800">
           <Download className="w-4 h-4 mr-2" />
@@ -216,10 +223,11 @@ export function AdminFinancials() {
             <div className="relative">
               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <Input 
-                type="date" 
-                value={selectedDate} 
+                type="date"
+                value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="pl-10 bg-white"
+                title="Date is in UTC"
               />
             </div>
           </div>
@@ -271,7 +279,7 @@ export function AdminFinancials() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-xs font-bold text-neutral-500 uppercase">Expected vs Actual Sales</p>
-            <p className="text-sm text-neutral-600">Calculated from opening and closing stock for {selectedDate}</p>
+            <p className="text-sm text-neutral-600">Calculated from opening and closing stock for {selectedDate} (UTC)</p>
           </div>
           <Badge variant="outline">Stock Reconciliation</Badge>
         </div>
@@ -324,7 +332,7 @@ export function AdminFinancials() {
                       <td className="py-3 px-4 text-sm">
                         <p className="font-medium">{exp.description || 'Expense'}</p>
                         <p className="text-xs text-neutral-400">
-                          {format(new Date(exp.created_at), 'HH:mm')} • {staffById[exp.recorded_by] || 'Staff'}
+                          {format(new Date(exp.created_at), 'HH:mm')} UTC • {staffById[exp.recorded_by] || 'Staff'}
                         </p>
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-red-700">
