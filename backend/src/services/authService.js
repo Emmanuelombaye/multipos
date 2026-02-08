@@ -4,11 +4,12 @@ import { supabase } from '../db/supabase.js';
 
 export const register = async (name, email, password, role = 'cashier', branchId = null) => {
   try {
+    const cleanEmail = email.toLowerCase().trim();
     // Check if user exists
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
-      .eq('email', email)
+      .eq('email', cleanEmail)
       .single();
 
     if (existingUser) {
@@ -25,7 +26,7 @@ export const register = async (name, email, password, role = 'cashier', branchId
       .from('users')
       .insert({
         name,
-        email,
+        email: cleanEmail,
         password_hash: hashedPassword,
         role,
         branch_id: branchId,
@@ -44,10 +45,11 @@ export const register = async (name, email, password, role = 'cashier', branchId
 export const login = async (email, password) => {
   try {
     // Find user
+    const cleanEmail = email.toLowerCase().trim();
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email)
+      .eq('email', cleanEmail)
       .single();
 
     if (error || !user) {
@@ -81,5 +83,19 @@ export const login = async (email, password) => {
     return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role, branchId: user.branch_id } };
   } catch (error) {
     throw error;
+  }
+};
+
+export const checkUserExists = async (email) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('role, branch_id, status')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    return { data, error };
+  } catch (error) {
+    return { data: null, error };
   }
 };

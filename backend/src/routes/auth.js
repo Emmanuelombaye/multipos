@@ -35,4 +35,23 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+// Debug endpoint (can be removed later)
+router.get('/check-user/:email', async (req, res, next) => {
+  try {
+    const { data: user, error } = await authService.checkUserExists(req.params.email);
+    if (error) throw error;
+    if (!user) {
+      return res.status(404).json({ exists: false, message: 'User not found' });
+    }
+    res.json({
+      exists: true,
+      role: user.role,
+      branchId: user.branch_id,
+      status: user.status
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

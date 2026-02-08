@@ -15,6 +15,9 @@ async function seed() {
     const { data: reemBranch } = await supabase.from('branches').select('id').eq('name', 'Edendrop Reem').single();
     const { data: msabweniBranch } = await supabase.from('branches').select('id').eq('name', 'Edendrop Msabweni').single();
 
+    // Define default password for admin/manager
+    const password = await bcrypt.hash('password123', 10);
+
     const upsertUsers = [
       {
         name: 'Admin User',
@@ -66,8 +69,10 @@ async function seed() {
     console.log('\n📝 Login credentials:');
     console.log('   Admin: admin@example.com / password123');
     console.log('   Manager: manager@example.com / password123');
-    console.log('   Cashier: cashier@example.com / password123');
-    
+    console.log('   Cashier Tamasha: cashier@tamasha.com / @Kenya90!');
+    console.log('   Cashier Reem: cashier@reem.com / @Kenya80!');
+    console.log('   Cashier Msabweni: cashier@msabweni.com / @Kenya70!');
+
   } catch (error) {
     console.error('❌ Seeding failed:', error);
   }
