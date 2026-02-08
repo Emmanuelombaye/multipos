@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Trash2, Printer, CreditCard, Smartphone, Banknote, Plus, Minus, Receipt, PackageSearch, Loader, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Trash2, Printer, CreditCard, Smartphone, Banknote, Plus, Minus, Receipt, PackageSearch, Loader, RefreshCw, Store } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -56,6 +56,9 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   // Stock count states
   const [showStockDialog, setShowStockDialog] = useState(false);
   const [closingStocks, setClosingStocks] = useState<{ [id: string]: string }>({});
+
+  // Mobile View Toggle ('menu' or 'cart')
+  const [mobileView, setMobileView] = useState<'menu' | 'cart'>('menu');
 
   // Fetch products with stock
   useEffect(() => {
@@ -301,13 +304,42 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   const cartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] gap-4 p-4 bg-neutral-50 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] gap-0 lg:gap-4 p-0 lg:p-4 bg-neutral-50 overflow-hidden pb-16 lg:pb-0">
+
+      {/* MOBILE ONLY: High Visibility Header & Tab Switcher */}
+      <div className="flex lg:hidden flex-col bg-white border-b shadow-sm sticky top-0 z-20">
+        <div className="bg-blue-600 text-white text-[10px] py-0.5 text-center font-bold tracking-widest uppercase">
+          New Layout Active (v3.0) - Use Tabs Below
+        </div>
+        <div className="flex p-1.5 gap-1.5">
+          <button
+            onClick={() => setMobileView('menu')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-sm font-bold transition-all ${mobileView === 'menu' ? 'bg-red-700 text-white shadow-md scale-[1.02]' : 'bg-neutral-100 text-neutral-500'
+              }`}
+          >
+            <Store className="w-4 h-4" />
+            1. PRODUCTS
+          </button>
+          <button
+            onClick={() => setMobileView('cart')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-sm font-bold transition-all ${mobileView === 'cart' ? 'bg-red-700 text-white shadow-md scale-[1.02]' : 'bg-neutral-100 text-neutral-500'
+              }`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            2. CART ({cart.length})
+          </button>
+        </div>
+      </div>
+
       {/* Product Selection Area */}
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className={`flex-1 overflow-y-auto p-2 lg:p-0 pr-0 lg:pr-2 ${mobileView === 'menu' ? 'block' : 'hidden lg:block'}`}>
         <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-neutral-200 shadow-sm lg:bg-transparent lg:border-none lg:shadow-none lg:p-0">
           <div className="flex items-center justify-between w-full md:w-auto">
             <div>
-              <h2 className="text-xl font-bold text-neutral-900">Point of Sale</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-neutral-900">Point of Sale</h2>
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none text-[10px] h-4 px-1 lg:hidden">v2.0 Mobile</Badge>
+              </div>
               <p className="text-xs text-neutral-600">Cashier: {cashierName}</p>
             </div>
             {!isOnline && (
@@ -341,7 +373,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                   <span className="text-xs sm:text-sm">Expense</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[425px] w-[95vw] rounded-xl">
                 <DialogHeader>
                   <DialogTitle>Log Operational Expense</DialogTitle>
                 </DialogHeader>
@@ -393,7 +425,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                   <span className="text-xs sm:text-sm">Stock</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl">
                 <DialogHeader>
                   <DialogTitle>Daily Stock Count - Closing Stock</DialogTitle>
                 </DialogHeader>
@@ -526,11 +558,11 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
       </div>
 
       {/* Cart & Checkout Panel */}
-      <Card className="w-full lg:w-96 p-3 lg:p-4 flex flex-col h-full overflow-hidden bg-white shadow-lg">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b">
+      <Card className={`w-full lg:w-96 p-3 lg:p-4 flex flex-col h-full overflow-hidden bg-white shadow-lg border-t-4 border-red-700 lg:border-t-0 ${mobileView === 'cart' ? 'block' : 'hidden lg:flex'}`}>
+        <div className="flex items-center justify-between mb-2 lg:mb-4 pb-2 lg:pb-3 border-b">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-red-700" />
-            <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Cart</h3>
+            <ShoppingCart className="w-5 h-5 lg:w-6 lg:h-6 text-red-700" />
+            <h3 className="text-lg font-bold text-neutral-900">Cart</h3>
             {cart.length > 0 && (
               <Badge className="bg-red-700 text-white">{cart.length} items</Badge>
             )}
