@@ -57,21 +57,51 @@ app.use('/api/dashboard', authenticate, dashboardRoutes);
 // Serve frontend in production environments or if dist exists
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const distPath = path.join(__dirname, '../../dist');
+import fs from 'fs';
+
+let distPath = path.join(__dirname, '../../dist');
+
+// If ../../dist doesn't exist, try ../dist (in case we are in a different structure)
+if (!fs.existsSync(distPath)) {
+  const altPath = path.join(__dirname, '../dist');
+  if (fs.existsSync(altPath)) {
+    distPath = altPath;
+  }
+}
 
 if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' || process.env.RENDER) {
-  console.log(`🌐 Serving static files from: ${distPath}`);
+  console.log(`🌐 Production Mode: Attempting to serve static files from: ${distPath}`);
+  console.log(`📂 Directory exists: ${fs.existsSync(distPath)}`);
+
+  if (fs.existsSync(distPath)) {
+    try {
+      const files = fs.readdirSync(distPath);
+      console.log(`📄 Files in dist: ${files.join(', ')}`);
+    } catch (e) {
+      console.error('❌ Error reading dist directory:', e.message);
+    }
+  } else {
+    console.error('❌ WARNING: dist directory not found! Static files will NOT be served.');
+    console.log(`📍 Current __dirname: ${__dirname}`);
+    console.log(`📍 Current process.cwd(): ${process.cwd()}`);
+  }
 
   // Serve static files
   app.use(express.static(distPath));
 
   // Handle SPA fallback
   app.get('*', (req, res, next) => {
-    // Skip API routes so they can hit the error handler or 404 json
+    // Skip API routes
     if (req.path.startsWith('/api')) {
       return next();
     }
-    res.sendFile(path.join(distPath, 'index.html'));
+
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Frontend not built. Please run build command.');
+    }
   });
 } else {
   console.log('🛠️ Development mode: Static file serving is disabled');
