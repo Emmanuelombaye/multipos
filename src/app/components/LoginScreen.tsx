@@ -131,21 +131,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="block text-sm font-medium text-neutral-700">Branch</Label>
-              <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={isLoading}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {selectedRole === 'cashier' && (
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium text-neutral-700">Branch</Label>
+                <Select value={selectedBranch} onValueChange={setSelectedBranch} disabled={isLoading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <Button
