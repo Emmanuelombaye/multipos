@@ -34,7 +34,7 @@ export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
   const cleanDate = (d) => d.split('T')[0];
   const startISO = `${cleanDate(startDate)}T00:00:00Z`;
   const endISO = `${cleanDate(endDate)}T23:59:59.999Z`;
-  
+
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
@@ -61,9 +61,11 @@ export const getTotalExpensesByDay = async (branchId) => {
 
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {
   // Convert date strings to timestamp ranges
-  const startISO = `${startDate}T00:00:00Z`;
-  const endISO = `${endDate}T23:59:59.999Z`;
-  
+  // Convert date strings to timestamp ranges
+  const cleanDate = (d) => d && d.split('T')[0];
+  const startISO = `${cleanDate(startDate)}T00:00:00Z`;
+  const endISO = `${cleanDate(endDate)}T23:59:59.999Z`;
+
   const { data, error } = await supabase
     .from('expenses')
     .select('category, amount')

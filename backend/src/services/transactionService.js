@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const createTransaction = async (branchId, cashierId, items, paymentMethod) => {
   let total = 0;
-  
+
   // Calculate total
   items.forEach(item => {
     total += item.subtotal;
@@ -100,9 +100,12 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
   // Convert date strings to timestamp ranges
   // startDate: '2026-02-07' -> '2026-02-07T00:00:00Z'
   // endDate: '2026-02-07' -> '2026-02-07T23:59:59Z'
-  const startISO = `${startDate}T00:00:00Z`;
-  const endISO = `${endDate}T23:59:59.999Z`;
-  
+  // startDate: '2026-02-07' -> '2026-02-07T00:00:00Z'
+  // endDate: '2026-02-07' -> '2026-02-07T23:59:59.999Z'
+  const cleanDate = (d) => d && d.split('T')[0];
+  const startISO = `${cleanDate(startDate)}T00:00:00Z`;
+  const endISO = `${cleanDate(endDate)}T23:59:59.999Z`;
+
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
