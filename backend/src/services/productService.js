@@ -109,9 +109,11 @@ export const getBranchProducts = async (branchId) => {
 
   if (error) throw error;
 
-  // Flatten the structure and use 'stock' for consistency
+  // Flatten the structure and prioritize branch-specific overrides
   return data.map(item => ({
     ...item.products,
+    price_per_kg: item.price_per_kg ?? item.products.price_per_kg,
+    low_stock_threshold: item.low_stock_threshold ?? item.products.low_stock_threshold,
     stock: item.current_stock,
     current_stock: item.current_stock,
   }));
@@ -201,10 +203,28 @@ export const removeProductFromBranch = async (branchId, productId) => {
     .select();
 
   if (error) throw error;
-  
+
   if (!data || data.length === 0) {
     throw new Error('Product not found in this branch');
   }
-  
+
   return data[0];
+};
+
+export const updateBranchProduct = async (branchId, productId, updates) => {
+  // Map frontend field names to DB names if necessary
+  const dbUpdates = {};
+  if (updates.pricePerKg !== undefined) dbUpdates.price_per_kg = updates.pricePerKg;
+  if (updates.lowStockThreshold !== undefined) dbUpdates.low_stock_threshold = updates.lowStockThreshold;
+
+  const { data, error } = await supabase
+    .from('branch_stock')
+    .update(dbUpdates)
+    .eq('branch_id', branchId)
+    .eq('product_id', productId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 };

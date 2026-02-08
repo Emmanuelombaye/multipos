@@ -29,6 +29,8 @@ CREATE TABLE branch_stock (
   branch_id UUID NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   current_stock DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  price_per_kg DECIMAL(10, 2), -- Branch-specific override
+  low_stock_threshold DECIMAL(10, 2), -- Branch-specific override
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(branch_id, product_id)
 );

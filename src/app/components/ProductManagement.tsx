@@ -16,13 +16,15 @@ export function ProductManagement() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Dialog states
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showStockDialog, setShowStockDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  
+  const [stockAmount, setStockAmount] = useState('0');
+
   // Form states
   const [formData, setFormData] = useState({
     name: '',
@@ -48,7 +50,7 @@ export function ProductManagement() {
       const data = await apiClient.getBranches();
       const branchesArray = Array.isArray(data) ? data : [];
       setBranches(branchesArray);
-      
+
       // Select first branch by default
       if (branchesArray.length > 0 && !selectedBranchId) {
         setSelectedBranchId(branchesArray[0].id);
@@ -61,7 +63,7 @@ export function ProductManagement() {
 
   const loadProducts = async () => {
     if (!selectedBranchId) return;
-    
+
     try {
       setLoading(true);
       const data = await apiClient.getBranchProducts(selectedBranchId);
@@ -95,7 +97,7 @@ export function ProductManagement() {
         formData.image,
         parseFloat(formData.initialStock) || 0
       );
-      
+
       toast.success('Product added to branch successfully');
       setShowAddDialog(false);
       resetForm();
@@ -107,17 +109,28 @@ export function ProductManagement() {
   };
 
   const handleEditProduct = async () => {
-    if (!selectedProduct) return;
+    if (!selectedProduct || !selectedBranchId) return;
 
     try {
-      await apiClient.updateProduct(selectedProduct.id, {
-        name: formData.name,
-        category: formData.category,
-        price_per_kg: parseFloat(formData.pricePerKg),
-        low_stock_threshold: parseInt(formData.lowStockThreshold) || 20,
-        image: formData.image,
+      // Use branch-specific update for price and threshold
+      await apiClient.updateBranchProduct(selectedBranchId, selectedProduct.id, {
+        pricePerKg: parseFloat(formData.pricePerKg),
+        lowStockThreshold: parseInt(formData.lowStockThreshold) || 20,
       });
-      
+
+      // Also update global product details if name/category/image changed
+      if (
+        formData.name !== selectedProduct.name ||
+        formData.category !== selectedProduct.category ||
+        formData.image !== (selectedProduct.image || '🥩')
+      ) {
+        await apiClient.updateProduct(selectedProduct.id, {
+          name: formData.name,
+          category: formData.category,
+          image: formData.image,
+        });
+      }
+
       toast.success('Product updated successfully');
       setShowEditDialog(false);
       setSelectedProduct(null);
@@ -129,12 +142,27 @@ export function ProductManagement() {
     }
   };
 
+  const handleAdjustStock = async () => {
+    if (!selectedProduct || !selectedBranchId || !stockAmount) return;
+
+    try {
+      await apiClient.addStock(selectedBranchId, selectedProduct.id, parseFloat(stockAmount));
+      toast.success(`Added ${stockAmount}kg to ${selectedProduct.name}`);
+      setShowStockDialog(false);
+      setStockAmount('0');
+      await loadProducts();
+    } catch (error) {
+      console.error('Failed to adjust stock:', error);
+      toast.error('Failed to adjust stock');
+    }
+  };
+
   const handleDeleteProduct = async () => {
     if (!selectedProduct || !selectedBranchId) return;
 
     try {
       await apiClient.removeProductFromBranch(selectedBranchId, selectedProduct.id);
-      
+
       toast.success('Product removed from branch successfully');
       setShowDeleteDialog(false);
       setSelectedProduct(null);
@@ -161,6 +189,12 @@ export function ProductManagement() {
   const openDeleteDialog = (product: any) => {
     setSelectedProduct(product);
     setShowDeleteDialog(true);
+  };
+
+  const openStockDialog = (product: any) => {
+    setSelectedProduct(product);
+    setStockAmount('0');
+    setShowStockDialog(true);
   };
 
   const resetForm = () => {
@@ -197,8 +231,8 @@ export function ProductManagement() {
           <h1 className="text-3xl font-bold text-neutral-900 mb-1">Product Management</h1>
           <p className="text-neutral-600">Manage products by branch</p>
         </div>
-        <Button 
-          onClick={() => setShowAddDialog(true)} 
+        <Button
+          onClick={() => setShowAddDialog(true)}
           className="bg-red-700 hover:bg-red-800"
           disabled={!selectedBranchId}
         >
@@ -261,7 +295,7 @@ export function ProductManagement() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-600">Price per Kg:</span>
@@ -281,6 +315,15 @@ export function ProductManagement() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => openStockDialog(product)}
+                  className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Stock
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => openEditDialog(product)}
                   className="flex-1"
                 >
@@ -291,10 +334,10 @@ export function ProductManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => openDeleteDialog(product)}
-                  className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  title="Remove from branch"
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Remove
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </Card>
@@ -464,6 +507,52 @@ export function ProductManagement() {
             </Button>
             <Button onClick={handleEditProduct} className="bg-red-700 hover:bg-red-800">
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adjust Stock Dialog */}
+      <Dialog open={showStockDialog} onOpenChange={setShowStockDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adjust Stock: {selectedProduct?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-neutral-50 rounded-lg border">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-neutral-600">Current Stock:</span>
+                <span className="font-bold">{selectedProduct?.current_stock} kg</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-600">Branch:</span>
+                <span className="font-medium">{selectedBranch?.name}</span>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="stock-add">Add Weight (Kg)</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="stock-add"
+                  type="number"
+                  value={stockAmount}
+                  onChange={(e) => setStockAmount(e.target.value)}
+                  placeholder="e.g., 20"
+                  className="flex-1"
+                />
+                <span className="flex items-center font-medium text-neutral-500">kg</span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-2">
+                Enter a positive number to add stock, or a negative number to reduce stock.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowStockDialog(false); setSelectedProduct(null); setStockAmount('0'); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAdjustStock} className="bg-green-700 hover:bg-green-800">
+              Update Stock
             </Button>
           </DialogFooter>
         </DialogContent>

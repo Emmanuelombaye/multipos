@@ -54,11 +54,13 @@ app.use('/api/expenses', authenticate, expenseRoutes);
 app.use('/api/staff', authenticate, staffRoutes);
 app.use('/api/dashboard', authenticate, dashboardRoutes);
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const distPath = path.join(__dirname, '../../dist');
+// Serve frontend in production environments or if dist exists
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, '../../dist');
+
+if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' || process.env.RENDER) {
+  console.log(`🌐 Serving static files from: ${distPath}`);
 
   // Serve static files
   app.use(express.static(distPath));
@@ -71,6 +73,8 @@ if (process.env.NODE_ENV === 'production') {
     }
     res.sendFile(path.join(distPath, 'index.html'));
   });
+} else {
+  console.log('🛠️ Development mode: Static file serving is disabled');
 }
 
 // Error handling middleware

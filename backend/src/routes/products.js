@@ -1,5 +1,6 @@
 import express from 'express';
 import * as productService from '../services/productService.js';
+import * as inventoryService from '../services/inventoryService.js';
 import { authorize } from '../middleware/auth.js';
 import { clearCache } from '../middleware/cache.js';
 
@@ -144,6 +145,42 @@ router.delete('/:id', authorize(['admin']), async (req, res, next) => {
     clearCache('/inventory');
 
     res.json({ message: 'Product deleted successfully', product });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update branch-specific product details (admin only)
+router.put('/branch/:branchId/:productId', authorize(['admin']), async (req, res, next) => {
+  try {
+    const product = await productService.updateBranchProduct(req.params.branchId, req.params.productId, req.body);
+
+    // Invalidate caches
+    clearCache('/products');
+
+    res.json(product);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add stock to branch product (admin only)
+router.post('/branch/:branchId/:productId/stock', authorize(['admin', 'manager']), async (req, res, next) => {
+  try {
+    const { amount } = req.body;
+    const addedBy = req.user?.name || 'Admin';
+
+    if (!amount || parseFloat(amount) <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+
+    const result = await inventoryService.addStock(req.params.branchId, req.params.productId, amount, addedBy);
+
+    // Invalidate caches
+    clearCache('/inventory');
+    clearCache('/products');
+
+    res.json(result);
   } catch (error) {
     next(error);
   }

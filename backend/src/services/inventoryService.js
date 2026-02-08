@@ -137,3 +137,46 @@ export const updateBranchStock = async (branchId, productId, currentStock) => {
     throw error;
   }
 };
+
+export const addStock = async (branchId, productId, amount, addedBy) => {
+  // 1. Get current stock
+  const { data: current, error: fetchError } = await supabase
+    .from('branch_stock')
+    .select('current_stock')
+    .eq('branch_id', branchId)
+    .eq('product_id', productId)
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+  const oldStock = current?.current_stock || 0;
+  const newStock = parseFloat(oldStock) + parseFloat(amount);
+
+  // 2. Update branch_stock
+  const { data, error } = await supabase
+    .from('branch_stock')
+    .upsert({
+      branch_id: branchId,
+      product_id: productId,
+      current_stock: newStock,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'branch_id,product_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // 3. Log to stock_history
+  const today = new Date().toISOString().split('T')[0];
+  await supabase
+    .from('stock_history')
+    .upsert({
+      product_id: productId,
+      branch_id: branchId,
+      opening_stock: newStock, // Opening stock for the current/next day
+      date: today,
+      added_by: addedBy || 'Admin'
+    }, { onConflict: 'branch_id,product_id,date' });
+
+  return data;
+};

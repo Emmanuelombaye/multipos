@@ -57,7 +57,7 @@ class APIClient {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           localStorage.removeItem('userName');
-          
+
           // Only reload if not already on login page
           if (window.location.pathname !== '/') {
             // Use a more gentle approach - dispatch custom event
@@ -213,7 +213,7 @@ class APIClient {
 
     // Invalidate product caches
     this.cache.clear();
-    
+
     return response.data;
   }
 
@@ -222,7 +222,7 @@ class APIClient {
 
     // Invalidate all product and inventory caches
     this.cache.clear();
-    
+
     return response.data;
   }
 
@@ -237,7 +237,7 @@ class APIClient {
 
     // Invalidate product caches
     this.cache.delete('/products');
-    
+
     return response.data;
   }
 
@@ -246,7 +246,7 @@ class APIClient {
 
     // Invalidate product caches
     this.cache.delete('/products');
-    
+
     return response.data;
   }
 
@@ -255,7 +255,21 @@ class APIClient {
 
     // Invalidate all product and inventory caches
     this.cache.clear();
-    
+
+    return response.data;
+  }
+
+  async updateBranchProduct(branchId: string, productId: string, updates: any): Promise<any> {
+    const response = await this.axios.put(`/products/branch/${branchId}/${productId}`, updates);
+    this.cache.clear();
+    return response.data;
+  }
+
+  async addStock(branchId: string, productId: string, amount: number): Promise<any> {
+    const response = await this.axios.post(`/products/branch/${branchId}/${productId}/stock`, {
+      amount,
+    });
+    this.cache.clear();
     return response.data;
   }
 
@@ -278,7 +292,7 @@ class APIClient {
 
     // Invalidate all caches
     this.cache.clear();
-    
+
     return response.data;
   }
 
@@ -330,10 +344,10 @@ class APIClient {
       closingStock,
       date,
     });
-    
+
     // Invalidate all caches so admin sees updated closing stock immediately
     this.cache.clear();
-    
+
     return response.data;
   }
 
@@ -360,11 +374,11 @@ class APIClient {
     const response = await this.axios.put(`/inventory/stock/${branchId}/${productId}`, {
       currentStock,
     });
-    
+
     // Invalidate related caches
     this.cache.delete(`/inventory/current/${branchId}`);
     this.cache.delete(`/inventory/low-stock/${branchId}`);
-    
+
     return response.data;
   }
 
@@ -389,7 +403,7 @@ class APIClient {
 
     // Invalidate all related caches
     this.cache.clear();
-    
+
     return response.data;
   }
 
