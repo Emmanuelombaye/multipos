@@ -5,13 +5,11 @@ import { authorize } from '../middleware/auth.js';
 const router = express.Router();
 
 // Get all branches
-router.get('/', async (req, res, next) => {
-  try {
-    const branches = await branchService.getAllBranches();
-    res.json(branches);
-  } catch (error) {
-    next(error);
-  }
+// Ensure this route is always public (no auth middleware)
+router.get('/', (req, res, next) => {
+  branchService.getAllBranches()
+    .then(branches => res.json(branches))
+    .catch(next);
 });
 
 // Get branch by ID with stats
