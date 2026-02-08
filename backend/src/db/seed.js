@@ -116,7 +116,9 @@ async function seed() {
     console.log('\n👥 Creating users...');
     const password = await bcrypt.hash('password123', 10);
     
-    const users = [
+
+    // Upsert (insert or update) admin, manager, and three cashiers with fixed credentials and branch assignments
+    const upsertUsers = [
       {
         name: 'Admin User',
         email: 'admin@example.com',
@@ -133,33 +135,34 @@ async function seed() {
       },
       {
         name: 'Cashier Tamasha',
-        email: 'cashier@example.com',
+        email: 'cashier@tamasha.com',
         password_hash: await bcrypt.hash('@Kenya90!', 10),
         role: 'cashier',
         branch_id: branches[0]?.id
       },
       {
         name: 'Cashier Reem',
-        email: 'cashier2@example.com',
+        email: 'cashier@reem.com',
         password_hash: await bcrypt.hash('@Kenya80!', 10),
         role: 'cashier',
         branch_id: branches[1]?.id
       },
       {
         name: 'Cashier Msabweni',
-        email: 'cashier3@example.com',
+        email: 'cashier@msabweni.com',
         password_hash: await bcrypt.hash('@Kenya70!', 10),
         role: 'cashier',
         branch_id: branches[2]?.id
       }
     ];
 
-    for (const user of users) {
+    for (const user of upsertUsers) {
+      // Upsert by email: if exists, update password_hash, role, branch_id, name
       const { error } = await supabase
         .from('users')
-        .insert(user);
+        .upsert(user, { onConflict: ['email'] });
       if (error) console.error('User error:', error);
-      else console.log(`✓ Created user: ${user.email} (${user.role})`);
+      else console.log(`✓ Upserted user: ${user.email} (${user.role})`);
     }
 
     console.log('\n✅ Database seeding completed successfully!');
