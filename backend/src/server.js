@@ -24,25 +24,36 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware (v4.2.1)
+// Middleware (v4.2.2 - Deep Scan Mode)
 const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim().replace(/\/$/, '')).filter(o => o.length > 0)
   : ['http://localhost:5173', 'http://localhost:5000'];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // 1. Allow internal/no-origin requests (curl, mobile, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      console.warn(`⚠️ CORS Match Failed for origin: ${origin}`);
-      // Send false instead of an Error to stop the 500 response
-      callback(null, false);
+    // 2. Check if in whitelist
+    const isWhitelisted = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+
+    if (isWhitelisted) {
+      return callback(null, true);
     }
+
+    // 3. LOGGING FOR DEEP SCAN
+    console.warn('❌ CORS BLOCKED:', {
+      incoming: origin,
+      whitelist: allowedOrigins,
+      matched: isWhitelisted
+    });
+
+    // 4. PREVENT 500: Allow the request through but don't set CORS header
+    // Use callback(null, false) - this is standard for 'reject but don't crash'
+    callback(null, false);
   },
   credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 app.use(express.json());

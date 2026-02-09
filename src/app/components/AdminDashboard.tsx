@@ -146,17 +146,7 @@ export function AdminDashboard() {
     return colors[category] || '#6366f1';
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-red-700 mx-auto mb-4" />
-          <p className="text-neutral-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Move calculations to top to avoid React Hook violations (Error #310)
   const totalSales = dashboardData?.total_sales || 0;
   const activeBranches = branchesData.filter((b: any) => b.status === 'open').length;
   const totalStaff = branchesData.reduce((sum, b) => sum + (b.staffCount || 0), 0) || dashboardData?.total_staff || 0;
@@ -171,6 +161,18 @@ export function AdminDashboard() {
     const diff = ((latest - previous) / previous) * 100;
     return { percent: Math.abs(Math.round(diff)), isPositive: diff >= 0 };
   }, [chartData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader className="w-12 h-12 animate-spin text-red-700 mx-auto mb-4" />
+          <p className="text-neutral-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6 p-4 md:p-6 bg-neutral-50">
