@@ -56,15 +56,15 @@ export const getTotalExpensesByDay = async (branchId, dateStr) => {
     .from('expenses')
     .select('amount')
     .eq('branch_id', branchId)
-    .gte('created_at', date)
-    .lt('created_at', date);
+    .gte('created_at', `${date} 00:00:00`)
+    .lte('created_at', `${date} 23:59:59`);
 
   if (error) throw error;
   return data?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
 };
 
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {
-  // Simple date-only queries (assumes DB is in EAT)
+  // Simple date-only queries (DB is in EAT)
   const cleanDate = (d) => d && d.split('T')[0];
   const startDateStr = cleanDate(startDate);
   const endDateStr = cleanDate(endDate);
@@ -73,8 +73,8 @@ export const getExpensesByCategory = async (branchId, startDate, endDate) => {
     .from('expenses')
     .select('category, amount')
     .eq('branch_id', branchId)
-    .gte('created_at', startDateStr)
-    .lte('created_at', endDateStr);
+    .gte('created_at', `${startDateStr} 00:00:00`)
+    .lte('created_at', `${endDateStr} 23:59:59`);
 
   if (error) throw error;
 

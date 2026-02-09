@@ -97,7 +97,7 @@ export const getTransactionsByBranch = async (branchId, limit = 50, offset = 0) 
 };
 
 export const getTransactionsByDateRange = async (branchId, startDate, endDate) => {
-  // Simple date-only queries (assumes DB is in EAT)
+  // Simple date-only queries (DB is in EAT)
   const cleanDate = (d) => d && d.split('T')[0];
   const startDateStr = cleanDate(startDate);
   const endDateStr = cleanDate(endDate);
@@ -106,8 +106,8 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
     .from('transactions')
     .select('*')
     .eq('branch_id', branchId)
-    .gte('created_at', startDateStr)
-    .lte('created_at', endDateStr)
+    .gte('created_at', `${startDateStr} 00:00:00`)
+    .lte('created_at', `${endDateStr} 23:59:59`)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -116,15 +116,13 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
 
 export const getTotalSalesByDay = async (branchId, dateStr) => {
   const date = dateStr || new Date().toISOString().split('T')[0];
-  const startISO = `${date}T00:00:00+03:00`;
-  const endISO = `${date}T23:59:59.999+03:00`;
 
   const { data, error } = await supabase
     .from('transactions')
     .select('total')
     .eq('branch_id', branchId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO);
+    .gte('created_at', `${date} 00:00:00`)
+    .lte('created_at', `${date} 23:59:59`);
 
   if (error) throw error;
   return data?.reduce((sum, t) => sum + t.total, 0) || 0;

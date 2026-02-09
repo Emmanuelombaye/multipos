@@ -149,15 +149,15 @@ router.get('/metrics/:branchId', async (req, res, next) => {
       .from('transactions')
       .select('total, created_at')
       .eq('branch_id', branchId)
-      .gte('created_at', startDateStr)
-      .lte('created_at', endDateStr);
+      .gte('created_at', `${startDateStr} 00:00:00`)
+      .lte('created_at', `${endDateStr} 23:59:59`);
 
     const { data: expenses } = await supabase
       .from('expenses')
       .select('amount, created_at')
       .eq('branch_id', branchId)
-      .gte('created_at', startDateStr)
-      .lte('created_at', endDateStr);
+      .gte('created_at', `${startDateStr} 00:00:00`)
+      .lte('created_at', `${endDateStr} 23:59:59`);
 
     // Group by date
     const dateMetrics = {};

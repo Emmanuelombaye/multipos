@@ -59,21 +59,15 @@ export const getBranchWithStats = async (branchId) => {
     .select('*', { count: 'exact', head: true })
     .eq('branch_id', branchId);
 
-  // Get today's sales using local EAT logic (+03:00)
-  const getLocalDate = () => {
-    const now = new Date();
-    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const nairobiTime = new Date(utcTime + (3 * 3600000));
-    return nairobiTime.toISOString().split('T')[0];
-  };
-  const today = getLocalDate();
-  const startISO = `${today}T00:00:00+03:00`;
+  // Get today's sales (DB is now in EAT)
+  const today = new Date().toISOString().split('T')[0];
 
   const { data: todayTransactions } = await supabase
     .from('transactions')
     .select('total')
     .eq('branch_id', branchId)
-    .gte('created_at', startISO);
+    .gte('created_at', `${today} 00:00:00`)
+    .lte('created_at', `${today} 23:59:59`);
 
   const todaySales = todayTransactions?.reduce((sum, t) => sum + t.total, 0) || 0;
 
