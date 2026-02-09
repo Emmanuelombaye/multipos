@@ -44,7 +44,7 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // CACHE BUSTER: Force reload if version mismatch
-  const APP_VERSION = "4.0.0"; // Final Mobile Overhaul Version
+  const APP_VERSION = "4.1.0"; // Product-First Mobile Redesign
   useEffect(() => {
     const cachedVersion = localStorage.getItem('app_version');
     if (cachedVersion !== APP_VERSION) {
@@ -249,8 +249,8 @@ export default function App() {
                 key={item.id}
                 onClick={() => setCurrentScreen(item.id as Screen)}
                 className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${currentScreen === item.id
-                    ? 'border-red-500 text-white bg-white/5'
-                    : 'border-transparent text-neutral-300 hover:text-white hover:bg-white/5'
+                  ? 'border-red-500 text-white bg-white/5'
+                  : 'border-transparent text-neutral-300 hover:text-white hover:bg-white/5'
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -275,8 +275,8 @@ export default function App() {
                     setMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentScreen === item.id
-                      ? 'bg-red-50 text-red-700 font-semibold'
-                      : 'text-neutral-700 hover:bg-neutral-100'
+                    ? 'bg-red-50 text-red-700 font-semibold'
+                    : 'text-neutral-700 hover:bg-neutral-100'
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -304,8 +304,8 @@ export default function App() {
                   key={item.id}
                   onClick={() => setCurrentScreen(item.id as Screen)}
                   className={`flex-1 flex flex-col items-center gap-1 py-3 ${currentScreen === item.id
-                      ? 'text-red-700'
-                      : 'text-neutral-500'
+                    ? 'text-red-700'
+                    : 'text-neutral-500'
                     }`}
                 >
                   <Icon className="w-6 h-6" />

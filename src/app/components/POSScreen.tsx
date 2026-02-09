@@ -305,9 +305,9 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] gap-0 lg:gap-4 p-0 lg:p-4 bg-neutral-50 overflow-hidden relative">
 
-      {/* GLOBAL CACHE STATUS (v4.0.0) */}
+      {/* GLOBAL CACHE STATUS (v4.1.0) */}
       <div className="hidden lg:flex fixed bottom-2 right-2 bg-neutral-900/10 text-neutral-500 text-[8px] px-1 rounded z-50">
-        v4.0.0 (Mobile Optimized)
+        v4.1.0 (Product-First)
       </div>
 
       {/* Product Selection Area */}
@@ -317,38 +317,27 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-neutral-900">Point of Sale</h2>
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none text-[10px] h-4 px-1 lg:hidden uppercase tracking-tighter font-black">Online</Badge>
               </div>
-              <p className="text-xs text-neutral-600">Branch: {branchId} | Cashier: {cashierName}</p>
+              <p className="text-[10px] text-neutral-500 uppercase font-semibold">Cashier: {cashierName}</p>
             </div>
-            {!isOnline && (
-              <div className="px-2 py-1 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 md:hidden">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                OFFLINE
-              </div>
-            )}
           </div>
-          {!isOnline && (
-            <div className="hidden md:flex px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200 items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              Offline mode - sales will sync when online
-            </div>
-          )}
           <div className="grid grid-cols-3 md:flex gap-2 w-full md:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => fetchProducts()}
               disabled={isLoadingProducts}
-              className="text-neutral-700 border-neutral-200 h-10 px-2 sm:px-4"
+              className="text-neutral-700 border-neutral-200 h-10 px-2 lg:px-4"
             >
-              <RefreshCw className={`w-4 h-4 mr-1 sm:mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
-              <span className="text-xs sm:text-sm">Refresh</span>
+              <RefreshCw className={`w-4 h-4 mr-1 lg:mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
+              <span className="text-[10px] lg:text-sm font-bold uppercase">Refresh</span>
             </Button>
             <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="text-red-700 border-red-200 h-10 px-2 sm:px-4">
-                  <Receipt className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="text-xs sm:text-sm">Expense</span>
+                <Button variant="outline" className="text-red-700 border-red-200 h-10 px-2 lg:px-4">
+                  <Receipt className="w-4 h-4 mr-1 lg:mr-2" />
+                  <span className="text-[10px] lg:text-sm font-bold uppercase">Expense</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] w-[95vw] rounded-xl">
@@ -398,9 +387,9 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
             <Dialog open={showStockDialog} onOpenChange={setShowStockDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="text-neutral-700 border-neutral-200 h-10 px-2 sm:px-4">
-                  <PackageSearch className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="text-xs sm:text-sm">Stock</span>
+                <Button variant="outline" className="text-neutral-700 border-neutral-200 h-10 px-2 lg:px-4">
+                  <PackageSearch className="w-4 h-4 mr-1 lg:mr-2" />
+                  <span className="text-[10px] lg:text-sm font-bold uppercase">Stock</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl">
@@ -485,7 +474,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
         {/* Weight Selector - Mobile Fixed Bottom / Desktop Below Grid */}
         {selectedProduct && (
           <Card className="fixed lg:relative bottom-0 left-0 right-0 lg:bottom-auto p-4 bg-white border-t-4 border-red-700 z-10 shadow-xl lg:mb-4">
-            <h3 className="font-semibold text-neutral-900 mb-3">
+            <h3 className="font-semibold text-neutral-900 mb-3 text-sm lg:text-base">
               Select Weight for{' '}
               {products.find((p) => p.id === selectedProduct)?.name}
             </h3>
@@ -494,7 +483,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 <Button
                   key={weight}
                   onClick={() => addToCart(selectedProduct, weight)}
-                  className="h-14 bg-red-700 hover:bg-red-800 text-white"
+                  className="h-14 bg-red-700 hover:bg-red-800 text-white font-bold"
                 >
                   {weight}kg
                 </Button>
@@ -516,7 +505,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                     addToCart(selectedProduct, weight);
                   }
                 }}
-                className="bg-red-700 hover:bg-red-800"
+                className="bg-red-700 hover:bg-red-800 font-bold"
                 disabled={!customWeight || parseFloat(customWeight) <= 0}
               >
                 Add
@@ -547,8 +536,8 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 <ShoppingCart className="w-5 h-5 text-white" />
               </div>
               <div className="text-left">
-                <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1">View Cart</p>
-                <p className="text-lg font-bold text-white leading-none">{cart.length} Products</p>
+                <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1">Basket</p>
+                <p className="text-lg font-bold text-white leading-none">{cart.length} Items</p>
               </div>
             </div>
             <div className="text-right">
@@ -671,56 +660,29 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
           ) : (
             cart.map((item) => (
               <div key={item.productId} className="p-3 bg-gradient-to-r from-neutral-50 to-neutral-100 rounded-lg border border-neutral-200 hover:border-red-300 transition-colors">
-                {/* Product Name & Price */}
                 <div className="flex items-start justify-between mb-1">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{item.image}</span>
                       <div className="overflow-hidden">
-                        <h4 className="font-bold text-neutral-900 text-xs sm:text-sm truncate">
-                          {item.productName}
-                        </h4>
-                        <p className="text-[10px] text-neutral-600">
-                          KES {item.pricePerKg}/kg
-                        </p>
+                        <h4 className="font-bold text-neutral-900 text-xs sm:text-sm truncate">{item.productName}</h4>
+                        <p className="text-[10px] text-neutral-600">KES {item.pricePerKg}/kg</p>
                       </div>
                     </div>
                   </div>
-                  <p className="font-bold text-red-700 text-xs sm:text-sm whitespace-nowrap ml-2">
-                    KES {item.total.toLocaleString()}
-                  </p>
+                  <p className="font-bold text-red-700 text-xs sm:text-sm whitespace-nowrap ml-2">KES {item.total.toLocaleString()}</p>
                 </div>
-
-                {/* Quantity Control Section */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 bg-white rounded border border-neutral-200">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => updateQuantity(item.productId, -0.5)}
-                      className="h-8 w-8 p-0 hover:bg-red-50 text-red-700"
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => updateQuantity(item.productId, -0.5)} className="h-8 w-8 p-0 text-red-700">
                       <Minus className="w-4 h-4" />
                     </Button>
-                    <span className="font-semibold text-neutral-900 w-12 text-center">
-                      {item.quantity.toFixed(2)}kg
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => updateQuantity(item.productId, 0.5)}
-                      className="h-8 w-8 p-0 hover:bg-green-50 text-green-700"
-                    >
+                    <span className="font-semibold text-neutral-900 w-12 text-center">{item.quantity.toFixed(2)}kg</span>
+                    <Button size="sm" variant="ghost" onClick={() => updateQuantity(item.productId, 0.5)} className="h-8 w-8 p-0 text-green-700">
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeFromCart(item.productId)}
-                    className="h-8 w-8 p-0 text-red-700 hover:bg-red-50 hover:text-red-800"
-                    title="Remove item"
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => removeFromCart(item.productId)} className="h-8 w-8 p-0 text-red-700">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -729,69 +691,30 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
           )}
         </div>
 
-        {/* Totals - More Prominent */}
-        {cart.length > 0 && (
-          <div className="border-t-2 border-red-200 pt-3 mb-4 bg-gradient-to-b from-red-50 to-transparent p-3 rounded-lg">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-neutral-600 font-medium">Total Items:</span>
-              <span className="font-bold text-neutral-900">{cartItems.toFixed(2)} kg</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xl lg:text-2xl font-bold text-neutral-900">Total:</span>
-              <span className="text-2xl lg:text-3xl font-bold text-red-700">KES {cartTotal.toLocaleString()}</span>
-            </div>
+        <div className="border-t-2 border-red-200 pt-3 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-xl font-bold text-neutral-900">Total:</span>
+            <span className="text-2xl font-bold text-red-700">KES {cartTotal.toLocaleString()}</span>
           </div>
-        )}
+        </div>
 
-        {/* Payment Buttons - Touch-friendly */}
         <div className="space-y-2">
-          <Button
-            onClick={() => handlePayment('cash')}
-            disabled={cart.length === 0 || isProcessing}
-            className="w-full h-12 lg:h-14 bg-green-700 hover:bg-green-800 text-white disabled:opacity-50 font-semibold text-base"
-          >
-            {isProcessing ? <Loader className="w-5 h-5 mr-2 animate-spin" /> : <Banknote className="w-5 h-5 mr-2" />}
+          <Button onClick={() => handlePayment('cash')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-700 text-white font-bold">
             Cash Payment
           </Button>
           <div className="grid grid-cols-2 gap-2">
-            <Button
-              onClick={() => handlePayment('mpesa')}
-              disabled={cart.length === 0 || isProcessing}
-              className="w-full h-12 lg:h-13 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 font-semibold"
-            >
-              <Smartphone className="w-5 h-5 mr-1" />
-              <span className="hidden sm:inline">M-Pesa</span>
-              <span className="sm:hidden">M-Pesa</span>
+            <Button onClick={() => handlePayment('mpesa')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-600 text-white font-bold">
+              M-Pesa
             </Button>
-            <Button
-              onClick={() => handlePayment('card')}
-              disabled={cart.length === 0 || isProcessing}
-              className="w-full h-12 lg:h-13 bg-blue-700 hover:bg-blue-800 text-white disabled:opacity-50 font-semibold"
-            >
-              <CreditCard className="w-5 h-5 mr-1" />
-              <span className="hidden sm:inline">Card</span>
-              <span className="sm:hidden">Card</span>
+            <Button onClick={() => handlePayment('card')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-blue-700 text-white font-bold">
+              Card
             </Button>
           </div>
-          <Button
-            onClick={() => {
-              if (cart.length > 0) {
-                toast.success('Receipt printed!');
-              }
-            }}
-            disabled={cart.length === 0}
-            variant="outline"
-            className="w-full h-10 font-semibold"
-          >
-            <Printer className="w-4 h-4 mr-2" />
-            Print Receipt
-          </Button>
         </div>
       </Card>
 
-      {/* Hidden Debug Info (Pressing 'D' to see is too complex, just show small at bottom for now) */}
       <div className="fixed bottom-1 left-1 text-[8px] text-neutral-300 pointer-events-none opacity-50 z-50">
-        API: {(import.meta as any).env.VITE_API_URL || 'Localhost'} | Branch: {branchId} | ID: {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id.slice(0, 5) : 'Anon'}
+        API: Live | Branch: {branchId} | v4.1.0
       </div>
     </div>
   );
