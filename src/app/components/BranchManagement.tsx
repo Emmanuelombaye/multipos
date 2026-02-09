@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown } from 'lucide-react';
+import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown, Download } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -338,15 +338,54 @@ export function BranchManagement() {
           <h1 className="text-3xl font-bold text-neutral-900 mb-2">Branch Management</h1>
           <p className="text-neutral-600">Manage all branches and operations</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => selectedDate && loadBranchMetrics(selectedDate)}
-          disabled={metricsLoading}
-          className="text-neutral-700 border-neutral-200"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${metricsLoading ? 'animate-spin' : ''}`} />
-          Refresh Metrics
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => selectedDate && loadBranchMetrics(selectedDate)}
+            disabled={metricsLoading}
+            className="text-neutral-700 border-neutral-200"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${metricsLoading ? 'animate-spin' : ''}`} />
+            Refresh Metrics
+          </Button>
+          <Button
+            className="bg-red-700 hover:bg-red-800"
+            onClick={() => {
+              const { exportToPDF } = require('../api/pdfExportUtils');
+              const summaryCards = [
+                { label: 'Total Revenue', value: `KES ${branches.reduce((sum, b) => sum + (branchMetrics[b.id]?.salesTotal || 0), 0).toLocaleString()}` },
+                { label: 'Active Branches', value: `${branches.filter(b => b.status === 'open').length} / ${branches.length}` },
+                { label: 'Total Staff', value: `${branches.reduce((sum, b) => sum + (b.staffCount || 0), 0)} Members` },
+              ];
+              const tables = [
+                {
+                  title: 'Branch Performance Summary',
+                  headers: ['Branch', 'Status', 'Sales', 'Expenses', 'Staff'],
+                  rows: branches.map(b => {
+                    const m = branchMetrics[b.id] || {};
+                    return [
+                      b.name,
+                      b.status?.toUpperCase(),
+                      `KES ${(m.salesTotal || 0).toLocaleString()}`,
+                      `KES ${(m.expensesTotal || 0).toLocaleString()}`,
+                      b.staffCount || 0
+                    ];
+                  })
+                }
+              ];
+              exportToPDF({
+                title: 'Branch Management Report',
+                subtitle: `Date: ${formattedDate}`,
+                summaryCards,
+                tables
+              }, `Branch_Report_${formattedDate.replace(/\//g, '-')}`);
+              toast.success('Branch report exported successfully');
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export Report
+          </Button>
+        </div>
       </div>
 
       {/* Date Filter */}

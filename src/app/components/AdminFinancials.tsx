@@ -180,14 +180,56 @@ export function AdminFinancials() {
   const salesVariance = totalSales - expectedRevenue;
 
   const handleExportPDF = () => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-      {
-        loading: 'Generating PDF report...',
-        success: `Report for ${currentBranchName} (${selectedDate}) exported successfully!`,
-        error: 'Failed to generate report',
-      }
-    );
+    try {
+      const summaryCards = [
+        { label: 'Total Sales', value: `KES ${totalSales.toLocaleString()}` },
+        { label: 'M-Pesa Sales', value: `KES ${mpesaSales.toLocaleString()}` },
+        { label: 'Cash Sales', value: `KES ${cashSales.toLocaleString()}` },
+        { label: 'Total Expenses', value: `KES ${totalExpenses.toLocaleString()}` },
+      ];
+
+      const tables = [
+        {
+          title: 'Stock Reconciliation',
+          headers: ['Product', 'Opening Stock', 'Closing Stock', 'Variance'],
+          rows: filteredStock.map(sh => {
+            const product = productsById[sh.product_id];
+            const openingStock = sh.opening_stock || 0;
+            const closingStock = sh.closing_stock ?? null;
+            const variance = closingStock !== null ? (openingStock - closingStock) : null;
+            return [
+              product?.name || 'Unknown',
+              `${openingStock}kg`,
+              closingStock !== null ? `${closingStock}kg` : '--',
+              variance !== null ? `${variance}kg` : '--'
+            ];
+          })
+        },
+        {
+          title: 'Daily Expenses',
+          headers: ['Category', 'Description', 'Recorded By', 'Amount'],
+          rows: filteredExpenses.map(exp => [
+            exp.category,
+            exp.description || 'Expense',
+            staffById[exp.recorded_by] || 'Staff',
+            `KES ${(exp.amount || 0).toLocaleString()}`
+          ])
+        }
+      ];
+
+      const { exportToPDF } = require('../api/pdfExportUtils');
+      exportToPDF({
+        title: 'Financial & Stock Report',
+        subtitle: `Branch: ${currentBranchName} | Date: ${selectedDate}`,
+        summaryCards,
+        tables
+      }, `Financials_${currentBranchName.replace(/\s+/g, '_')}_${selectedDate}`);
+
+      toast.success('Report exported successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to generate PDF report');
+    }
   };
 
   if (loading && branches.length === 0) {

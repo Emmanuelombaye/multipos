@@ -14,28 +14,40 @@ type Timeframe = 'day' | '3day' | 'week' | 'month' | '3month';
 export function ReportsScreen() {
   // PDF Export Handler
   const handleExportReport = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Reports & Analytics', 14, 18);
-    doc.setFontSize(12);
-    doc.text(`Timeframe: ${getTimeframeLabel(timeframe)}`, 14, 28);
-    doc.text(`Total Sales: KES ${totalSales.toLocaleString()}`, 14, 38);
-    doc.text(`Total Expenses: KES ${totalExpenses.toLocaleString()}`, 14, 48);
-    doc.text(`Net Growth: KES ${netGrowth.toLocaleString()}`, 14, 58);
-    doc.text(`Best Branch: ${bestBranchName || 'N/A'}`, 14, 68);
+    try {
+      const { exportToPDF } = require('../api/pdfExportUtils');
+      const summaryCards = [
+        { label: 'Total Sales', value: `KES ${totalSales.toLocaleString()}` },
+        { label: 'Total Expenses', value: `KES ${totalExpenses.toLocaleString()}` },
+        { label: 'Net Growth', value: `KES ${netGrowth.toLocaleString()}` },
+        { label: 'Growth %', value: `${salesGrowthPercent.toFixed(1)}%` },
+      ];
 
-    doc.setFontSize(14);
-    doc.text('Branch Sales:', 14, 80);
-    branchSalesComparison.forEach((b, i) => {
-      doc.text(`${b.branch}: KES ${b.sales.toLocaleString()}`, 14, 90 + i * 10);
-    });
+      const tables = [
+        {
+          title: 'Branch Contribution',
+          headers: ['Branch', 'Total Sales'],
+          rows: branchSalesComparison.map(b => [b.branch, `KES ${b.sales.toLocaleString()}`])
+        },
+        {
+          title: 'Expense Distribution',
+          headers: ['Category', 'Value', 'Percentage'],
+          rows: categoryDistribution.map(c => [c.name, `KES ${c.value.toLocaleString()}`, `${c.percentage}%`])
+        }
+      ];
 
-    doc.text('Expense Distribution:', 14, 100 + branchSalesComparison.length * 10);
-    categoryDistribution.forEach((c, i) => {
-      doc.text(`${c.name}: KES ${c.value.toLocaleString()} (${c.percentage}%)`, 14, 110 + branchSalesComparison.length * 10 + i * 10);
-    });
+      exportToPDF({
+        title: 'Reports & Analytics',
+        subtitle: `Timeframe: ${getTimeframeLabel(timeframe)} | Date: ${new Date().toLocaleDateString()}`,
+        summaryCards,
+        tables
+      }, `Analytics_Report_${timeframe}_${new Date().toISOString().split('T')[0]}`);
 
-    doc.save('report.pdf');
+      toast.success('Analytics report exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export analytics report');
+    }
   };
   const [timeframe, setTimeframe] = useState<Timeframe>('week');
   const [loading, setLoading] = useState(true);
