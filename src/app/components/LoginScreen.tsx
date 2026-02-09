@@ -164,16 +164,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </Button>
         </form>
 
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-xs text-blue-700">
-            <strong>Demo Accounts:</strong><br />
-            Admin: admin@example.com / password123<br />
-            Manager: manager@example.com / password123<br />
-            Cashier (Tamasha): cashier@tamasha.com / @Kenya90!<br />
-            Cashier (Reem): cashier@reem.com / @Kenya80!<br />
-            Cashier (Msabweni): cashier@msabweni.com / @Kenya70!
-          </p>
-        </div>
       </Card>
     </div>
   );

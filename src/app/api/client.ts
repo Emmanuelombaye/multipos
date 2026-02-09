@@ -1,8 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import { toast } from 'sonner';
 import { enqueueOfflineAction, getOfflineQueue, removeOfflineActions } from './offlineQueue';
+import { cacheProducts, getCachedProducts, cacheBranches, getCachedBranches, cacheTransaction } from './offlineDB';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface LoginResponse {
   token: string;
@@ -127,6 +128,42 @@ class APIClient {
     removeOfflineActions(completed);
   }
 
+  // Get sync status
+  getSyncStatus(): { pending: number; lastSync: string | null } {
+    const queue = getOfflineQueue();
+    const lastSync = localStorage.getItem('lastSyncTime');
+    return {
+      pending: queue.length,
+      lastSync: lastSync || null,
+    };
+  }
+
+  // Manual sync trigger
+  async manualSync(): Promise<{ success: boolean; synced: number; errors: number }> {
+    const initialQueue = getOfflineQueue();
+    const initialCount = initialQueue.length;
+
+    if (initialCount === 0) {
+      return { success: true, synced: 0, errors: 0 };
+    }
+
+    await this.syncOfflineQueue();
+
+    const remainingQueue = getOfflineQueue();
+    const synced = initialCount - remainingQueue.length;
+    const errors = remainingQueue.length;
+
+    if (synced > 0) {
+      localStorage.setItem('lastSyncTime', new Date().toISOString());
+    }
+
+    return {
+      success: errors === 0,
+      synced,
+      errors,
+    };
+  }
+
   private async cachedGet<T>(url: string, ttlMs: number): Promise<T> {
     if (ttlMs > 0) {
       const cached = this.cache.get(url);
@@ -160,7 +197,26 @@ class APIClient {
 
   // Branches
   async getBranches(): Promise<any[]> {
-    return this.cachedGet('/branches', 5000); // Shorter cache for branch list
+    try {
+      const branches = await this.cachedGet('/branches', 5000);
+
+      // Cache branches in IndexedDB
+      if (branches && branches.length > 0) {
+        await cacheBranches(branches);
+      }
+
+      return branches;
+    } catch (error) {
+      // If offline, try IndexedDB
+      if (!this.isOnline()) {
+        const cachedBranches = await getCachedBranches();
+        if (cachedBranches.length > 0) {
+          console.log(`📦 Loaded ${cachedBranches.length} branches from IndexedDB (offline)`);
+          return cachedBranches;
+        }
+      }
+      throw error;
+    }
   }
 
   async getBranch(id: string): Promise<any> {
@@ -185,6 +241,14 @@ class APIClient {
     const cacheKey = `branchProducts:${branchId}`;
 
     if (!this.isOnline()) {
+      // Try IndexedDB first (larger storage)
+      const cachedFromDB = await getCachedProducts(branchId);
+      if (cachedFromDB.length > 0) {
+        console.log(`📦 Loaded ${cachedFromDB.length} products from IndexedDB (offline)`);
+        return cachedFromDB;
+      }
+
+      // Fallback to localStorage
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         try {
@@ -197,7 +261,11 @@ class APIClient {
     }
 
     const data = await this.cachedGet(`/products/branch/${branchId}`, 5000);
+
+    // Cache in both IndexedDB and localStorage
+    await cacheProducts(data);
     localStorage.setItem(cacheKey, JSON.stringify(data));
+
     return data;
   }
 
