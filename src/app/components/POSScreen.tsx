@@ -550,81 +550,88 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
       {/* MOBILE FULL-SCREEN CART SHEET */}
       <Sheet open={showCartSheet} onOpenChange={setShowCartSheet}>
-        <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-[2rem] border-t-0 bg-neutral-50 overflow-hidden flex flex-col">
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-neutral-300 rounded-full" />
+        <SheetContent side="bottom" className="h-[92vh] p-0 rounded-t-[1.5rem] border-t-0 bg-neutral-50 overflow-hidden flex flex-col focus:ring-0">
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-neutral-300 rounded-full z-50" />
 
-          <div className="p-6 pt-10 bg-white border-b flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-red-100 p-3 rounded-2xl">
-                <ShoppingCart className="w-6 h-6 text-red-700" />
+          <div className="p-4 pt-7 bg-white border-b flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="bg-red-50 p-2 rounded-xl">
+                <ShoppingCart className="w-5 h-5 text-red-700" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-neutral-900">Checkout</h3>
-                <p className="text-sm text-neutral-500">{cart.length} items in your tray</p>
+                <h3 className="text-xl font-bold text-neutral-900 leading-tight">Your Tray</h3>
+                <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-tight">{cart.length} Products Added</p>
               </div>
             </div>
-            <Button variant="ghost" className="text-red-700 font-bold" onClick={clearCart}>Clear</Button>
+            <Button variant="ghost" size="sm" className="text-red-700 font-bold h-8 px-2 hover:bg-red-50" onClick={clearCart}>Clear All</Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-4">
             {cart.map((item) => (
-              <div key={item.productId} className="p-4 bg-white rounded-2xl border-2 border-neutral-100 shadow-sm flex flex-col gap-3">
+              <div key={item.productId} className="p-3 bg-white rounded-xl border border-neutral-200 shadow-sm flex flex-col gap-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{item.image}</span>
-                    <div>
-                      <h4 className="font-bold text-neutral-900 text-lg">{item.productName}</h4>
-                      <p className="text-sm text-neutral-500">KES {item.pricePerKg}/kg</p>
+                    <span className="text-2xl shrink-0">{item.image}</span>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-neutral-900 text-sm truncate">{item.productName}</h4>
+                      <p className="text-[10px] text-neutral-500 font-semibold">KES {item.pricePerKg}/kg</p>
                     </div>
                   </div>
-                  <p className="font-bold text-red-700 text-lg">KES {item.total.toLocaleString()}</p>
+                  <div className="text-right shrink-0">
+                    <p className="font-black text-red-700 text-sm">KES {item.total.toLocaleString()}</p>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <div className="flex items-center gap-4 bg-neutral-100 p-1 rounded-xl">
-                    <Button size="icon" variant="ghost" className="h-10 w-10 text-red-700" onClick={() => updateQuantity(item.productId, -0.5)}>
-                      <Minus className="w-5 h-5" />
+                <div className="flex items-center justify-between pt-2 border-t border-neutral-50">
+                  <div className="flex items-center gap-2 bg-neutral-100 p-1 rounded-lg">
+                    <Button size="icon" variant="ghost" className="h-9 w-9 text-red-700 hover:bg-white" onClick={() => updateQuantity(item.productId, -0.5)}>
+                      <Minus className="w-4 h-4" />
                     </Button>
-                    <span className="font-bold text-xl w-14 text-center">{item.quantity.toFixed(2)}</span>
-                    <Button size="icon" variant="ghost" className="h-10 w-10 text-green-700" onClick={() => updateQuantity(item.productId, 0.5)}>
-                      <Plus className="w-5 h-5" />
+                    <span className="font-bold text-lg w-12 text-center text-neutral-900">{item.quantity.toFixed(2)}</span>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 text-green-700 hover:bg-white" onClick={() => updateQuantity(item.productId, 0.5)}>
+                      <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  <Button size="icon" variant="ghost" className="text-neutral-400" onClick={() => removeFromCart(item.productId)}>
-                    <Trash2 className="w-5 h-5" />
+                  <Button size="icon" variant="ghost" className="h-9 w-9 text-neutral-400 hover:text-red-600 hover:bg-red-50" onClick={() => removeFromCart(item.productId)}>
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="p-6 bg-white border-t space-y-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-neutral-500 font-bold text-lg uppercase tracking-wider">Grand Total</span>
-              <span className="text-3xl font-black text-red-700">KES {cartTotal.toLocaleString()}</span>
+          <div className="p-4 pb-6 bg-white border-t space-y-3 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0">
+            <div className="flex justify-between items-end mb-1">
+              <div>
+                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight leading-none mb-1">Total Amount Due</p>
+                <span className="text-3xl font-black text-red-700 leading-none">KES {cartTotal.toLocaleString()}</span>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-neutral-500 font-bold uppercase leading-none">{cartItems.toFixed(1)} kg Total</p>
+              </div>
             </div>
 
             <Button
               onClick={() => { handlePayment('cash'); setShowCartSheet(false); }}
-              className="w-full h-16 bg-green-700 hover:bg-green-800 text-white text-xl font-bold rounded-2xl shadow-lg shadow-green-200"
+              className="w-full h-14 bg-green-700 hover:bg-green-800 text-white text-lg font-bold rounded-xl shadow-lg shadow-green-100 flex items-center justify-center gap-2"
             >
-              <Banknote className="w-6 h-6 mr-3" />
+              <Banknote className="w-5 h-5" />
               Pay Cash
             </Button>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 onClick={() => { handlePayment('mpesa'); setShowCartSheet(false); }}
-                className="h-14 bg-[#39B54A] hover:bg-[#2e933c] text-white font-bold rounded-2xl"
+                className="h-12 bg-[#39B54A] hover:bg-[#2e933c] text-white font-bold rounded-xl flex items-center justify-center gap-2"
               >
-                <Smartphone className="w-5 h-5 mr-2" />
+                <Smartphone className="w-4 h-4" />
                 M-Pesa
               </Button>
               <Button
                 onClick={() => { handlePayment('card'); setShowCartSheet(false); }}
-                className="h-14 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-2xl"
+                className="h-12 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl flex items-center justify-center gap-2"
               >
-                <CreditCard className="w-5 h-5 mr-2" />
+                <CreditCard className="w-4 h-4" />
                 Card
               </Button>
             </div>
