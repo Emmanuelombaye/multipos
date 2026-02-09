@@ -17,16 +17,7 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'recharts': ['recharts'],
-          'sonner': ['sonner'],
-          'react': ['react', 'react-dom'],
-        }
-      }
-    },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000,
   },
   // SPA fallback is handled by vercel.json in production
 })
