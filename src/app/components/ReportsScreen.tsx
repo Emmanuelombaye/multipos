@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { apiClient } from '../api/client';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { exportToPDF } from '../api/pdfExportUtils';
 
 type Timeframe = 'day' | '3day' | 'week' | 'month' | '3month';
 
@@ -15,7 +16,6 @@ export function ReportsScreen() {
   // PDF Export Handler
   const handleExportReport = () => {
     try {
-      const { exportToPDF } = require('../api/pdfExportUtils');
       const summaryCards = [
         { label: 'Total Sales', value: `KES ${totalSales.toLocaleString()}` },
         { label: 'Total Expenses', value: `KES ${totalExpenses.toLocaleString()}` },

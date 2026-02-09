@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Calendar } from './ui/calendar';
 import { toast } from 'sonner';
 import apiClient from '../api/client';
+import { exportToPDF } from '../api/pdfExportUtils';
 
 export function BranchManagement() {
   const [branches, setBranches] = useState<any[]>([]);
@@ -351,7 +352,6 @@ export function BranchManagement() {
           <Button
             className="bg-red-700 hover:bg-red-800"
             onClick={() => {
-              const { exportToPDF } = require('../api/pdfExportUtils');
               const summaryCards = [
                 { label: 'Total Revenue', value: `KES ${branches.reduce((sum, b) => sum + (branchMetrics[b.id]?.salesTotal || 0), 0).toLocaleString()}` },
                 { label: 'Active Branches', value: `${branches.filter(b => b.status === 'open').length} / ${branches.length}` },

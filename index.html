@@ -28,6 +28,32 @@
 
     <body>
       <div id="root"></div>
+      
+      <!-- Critical Loading Fallback -->
+      <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+          if (msg.indexOf('MIME type') !== -1 || msg.indexOf('Script error') !== -1 || msg.indexOf('loading chunk') !== -1) {
+            const root = document.getElementById('root');
+            if (root && root.innerHTML === '') {
+              root.innerHTML = `
+                <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #fafafa; font-family: sans-serif; text-align: center; padding: 20px;">
+                  <div>
+                    <div style="width: 64px; height: 64px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                      <span style="font-size: 32px;">🔄</span>
+                    </div>
+                    <h2 style="color: #171717; margin-bottom: 8px;">App Update Required</h2>
+                    <p style="color: #525252; margin-bottom: 24px; max-width: 320px;">A newer version is available. Your browser is trying to load old files. Please click below to refresh.</p>
+                    <button onclick="window.location.reload(true)" style="background: #b91c1c; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer;">Update & Refresh Now</button>
+                    <p style="margin-top: 20px; font-size: 12px; color: #a3a3a3;">Error: Failed to load application modules</p>
+                  </div>
+                </div>
+              `;
+            }
+          }
+          return false;
+        };
+      </script>
+
       <!-- Vite injects the correct script and CSS during build -->
       <script type="module" src="/src/main.tsx"></script>
     </body>

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from './ui/input';
 import { toast } from 'sonner';
 import { apiClient } from '../api/client';
+import { exportToPDF } from '../api/pdfExportUtils';
 
 export function AdminFinancials() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
@@ -217,7 +218,6 @@ export function AdminFinancials() {
         }
       ];
 
-      const { exportToPDF } = require('../api/pdfExportUtils');
       exportToPDF({
         title: 'Financial & Stock Report',
         subtitle: `Branch: ${currentBranchName} | Date: ${selectedDate}`,
