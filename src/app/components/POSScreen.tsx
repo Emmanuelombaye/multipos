@@ -319,7 +319,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
         <div className="flex flex-col lg:flex-row h-full gap-0 lg:gap-4 p-0 lg:p-4 bg-neutral-50 overflow-hidden relative">
           {/* GLOBAL CACHE STATUS (v4.1.0) */}
           <div className="hidden lg:flex fixed bottom-2 right-2 bg-neutral-900/10 text-neutral-500 text-[8px] px-1 rounded z-50">
-            v4.1.0 (Product-First)
+            v4.2.0 (Unified Tabs)
           </div>
 
           {/* Product Selection Area */}
@@ -733,7 +733,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
           </Card>
 
           <div className="fixed bottom-1 left-1 text-[8px] text-neutral-300 pointer-events-none opacity-50 z-50">
-            API: Live | Branch: {branchId} | v4.1.0
+            API: Live | Branch: {branchId} | v4.2.0
           </div>
         </div>
       </TabsContent>

@@ -44,7 +44,7 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   // CACHE BUSTER: Force reload if version mismatch
-  const APP_VERSION = "4.1.0"; // Product-First Mobile Redesign
+  const APP_VERSION = "4.2.0"; // Unified Tabbed POS Revision
   useEffect(() => {
     const cachedVersion = localStorage.getItem('app_version');
     if (cachedVersion !== APP_VERSION) {
