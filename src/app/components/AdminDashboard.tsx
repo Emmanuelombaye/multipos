@@ -47,7 +47,6 @@ export function AdminDashboard() {
         const startDate = new Date(endDate);
         startDate.setDate(endDate.getDate() - (days - 1));
 
-        // Create local ISO range for the entire timeframe
         // Create local ISO range for the entire timeframe in EAT (+03:00)
         const formatEAT = (d: Date) => {
           const pad = (n: number) => n.toString().padStart(2, '0');

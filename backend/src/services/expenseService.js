@@ -31,7 +31,7 @@ export const getExpensesByBranch = async (branchId, limit = 50, offset = 0) => {
 
 export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
   // Clean date input: ensure strict +03:00 (EAT) boundaries
-  const isFullISO = (d) => d && d.includes('T') && d.includes('+03:00');
+  const isFullISO = (d) => d && d.includes('T') && (d.includes('Z') || d.includes('+') || d.includes('-'));
   const cleanDate = (d) => d && d.split('T')[0];
 
   const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
@@ -74,7 +74,7 @@ export const getTotalExpensesByDay = async (branchId, dateStr) => {
 
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {
   // Convert date strings to strict +03:00 (EAT) ranges
-  const isFullISO = (d) => d && d.includes('T') && d.includes('+03:00');
+  const isFullISO = (d) => d && d.includes('T') && (d.includes('Z') || d.includes('+') || d.includes('-'));
   const cleanDate = (d) => d && d.split('T')[0];
 
   const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
