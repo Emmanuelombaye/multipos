@@ -40,6 +40,8 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [customWeight, setCustomWeight] = useState('');
+  const [inputMode, setInputMode] = useState<'weight' | 'amount'>('weight');
+  const [amountValue, setAmountValue] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -145,7 +147,8 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
     setSelectedProduct(null);
     setCustomWeight('');
-    toast.success(`Added ${weight}kg of ${product.name}`);
+    setAmountValue('');
+    toast.success(`Added ${weight.toFixed(3)}kg of ${product.name}`);
   };
 
   const removeFromCart = (productId: string) => {
@@ -486,50 +489,128 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
             {/* Weight Selector - Mobile Fixed Bottom / Desktop Below Grid */}
             {selectedProduct && (
               <Card className="fixed lg:relative bottom-0 left-0 right-0 lg:bottom-auto p-4 bg-white border-t-4 border-red-700 z-10 shadow-xl lg:mb-4">
-                <h3 className="font-semibold text-neutral-900 mb-3 text-sm lg:text-base">
-                  Select Weight for{' '}
-                  {products.find((p) => p.id === selectedProduct)?.name}
-                </h3>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
-                  {quickWeights.map((weight) => (
-                    <Button
-                      key={weight}
-                      onClick={() => addToCart(selectedProduct, weight)}
-                      className="h-14 bg-red-700 hover:bg-red-800 text-white font-bold"
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-neutral-900 text-sm lg:text-base">
+                    {products.find((p) => p.id === selectedProduct)?.name} -
+                    <span className="text-red-700 ml-1">KES {products.find((p) => p.id === selectedProduct)?.price_per_kg}/kg</span>
+                  </h3>
+                  <div className="flex bg-neutral-100 p-1 rounded-lg">
+                    <button
+                      onClick={() => setInputMode('weight')}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${inputMode === 'weight' ? 'bg-white text-red-700 shadow-sm' : 'text-neutral-500'}`}
                     >
-                      {weight}kg
-                    </Button>
-                  ))}
+                      Weight (kg)
+                    </button>
+                    <button
+                      onClick={() => setInputMode('amount')}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${inputMode === 'amount' ? 'bg-white text-red-700 shadow-sm' : 'text-neutral-500'}`}
+                    >
+                      Amount (KES)
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="Custom weight (kg)"
-                    value={customWeight}
-                    onChange={(e) => setCustomWeight(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={() => {
-                      const weight = parseFloat(customWeight);
-                      if (weight > 0) {
-                        addToCart(selectedProduct, weight);
-                      }
-                    }}
-                    className="bg-red-700 hover:bg-red-800 font-bold"
-                    disabled={!customWeight || parseFloat(customWeight) <= 0}
-                  >
-                    Add
-                  </Button>
+
+                {inputMode === 'weight' ? (
+                  <>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
+                      {quickWeights.map((weight) => (
+                        <Button
+                          key={weight}
+                          onClick={() => addToCart(selectedProduct, weight)}
+                          className="h-14 bg-red-700 hover:bg-red-800 text-white font-bold"
+                        >
+                          {weight}kg
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="Custom weight (kg)"
+                        value={customWeight}
+                        onChange={(e) => setCustomWeight(e.target.value)}
+                        className="flex-1 h-12 text-lg font-bold"
+                      />
+                      <Button
+                        onClick={() => {
+                          const weight = parseFloat(customWeight);
+                          if (weight > 0) {
+                            addToCart(selectedProduct, weight);
+                          }
+                        }}
+                        className="h-12 px-8 bg-red-700 hover:bg-red-800 font-bold"
+                        disabled={!customWeight || parseFloat(customWeight) <= 0}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">KES</span>
+                        <Input
+                          type="number"
+                          placeholder="Enter amount in Shillings"
+                          value={amountValue}
+                          onChange={(e) => setAmountValue(e.target.value)}
+                          className="pl-12 h-14 text-2xl font-black text-red-700"
+                          autoFocus
+                        />
+                      </div>
+                      <Button
+                        onClick={() => {
+                          const amount = parseFloat(amountValue);
+                          const product = products.find(p => p.id === selectedProduct);
+                          if (amount > 0 && product) {
+                            const calculatedWeight = amount / product.price_per_kg;
+                            addToCart(selectedProduct, calculatedWeight);
+                          }
+                        }}
+                        className="h-14 px-8 bg-red-700 hover:bg-red-800 font-black text-lg"
+                        disabled={!amountValue || parseFloat(amountValue) <= 0}
+                      >
+                        Add to Tray
+                      </Button>
+                    </div>
+
+                    {amountValue && parseFloat(amountValue) > 0 && products.find(p => p.id === selectedProduct) && (
+                      <div className="p-3 bg-red-50 rounded-lg border border-red-100 flex items-center justify-between">
+                        <span className="text-sm font-medium text-red-900">Converted Weight:</span>
+                        <span className="text-xl font-black text-red-700">
+                          {(parseFloat(amountValue) / (products.find(p => p.id === selectedProduct)?.price_per_kg || 1)).toFixed(3)} kg
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {[50, 100, 200, 500].map(val => (
+                        <Button
+                          key={val}
+                          variant="outline"
+                          className="h-10 font-bold border-neutral-200"
+                          onClick={() => setAmountValue(val.toString())}
+                        >
+                          {val}/-
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 flex gap-2">
                   <Button
                     onClick={() => {
                       setSelectedProduct(null);
                       setCustomWeight('');
+                      setAmountValue('');
                     }}
-                    variant="outline"
+                    variant="ghost"
+                    className="flex-1 text-neutral-500 font-bold"
                   >
-                    Cancel
+                    Close
                   </Button>
                 </div>
               </Card>
