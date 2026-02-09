@@ -24,8 +24,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173', 'http://localhost:5000'];
+// Middleware (v4.2.1)
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:5000'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -35,8 +37,9 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
       callback(null, true);
     } else {
-      console.warn(`⚠️ CORS blocked for origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`⚠️ CORS Match Failed for origin: ${origin}`);
+      // Send false instead of an Error to stop the 500 response
+      callback(null, false);
     }
   },
   credentials: true,
