@@ -9,11 +9,14 @@ import { apiClient } from '../api/client';
 
 interface InventoryScreenProps {
   branchId?: string;
+  hideHeader?: boolean;
+  hidePadding?: boolean;
+  initialTab?: string;
 }
 
-export function InventoryScreen({ branchId }: InventoryScreenProps) {
+export function InventoryScreen({ branchId, hideHeader = false, hidePadding = false, initialTab = 'current' }: InventoryScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('current');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -80,8 +83,8 @@ export function InventoryScreen({ branchId }: InventoryScreenProps) {
           const historyArray = Array.isArray(historyResponse?.data)
             ? historyResponse.data
             : Array.isArray(historyResponse)
-            ? historyResponse
-            : [];
+              ? historyResponse
+              : [];
           return historyArray;
         })
       );
@@ -173,22 +176,24 @@ export function InventoryScreen({ branchId }: InventoryScreenProps) {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 overflow-y-auto max-h-screen">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Inventory Management</h1>
-          <p className="text-neutral-600">
-            {isAdminView ? 'All branches stock overview' : 'Stock levels for current branch'}
-          </p>
+    <div className={`space-y-6 ${hidePadding ? '' : 'p-4 md:p-6'} overflow-y-auto max-h-screen`}>
+      {!hideHeader && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-neutral-900 mb-2">Inventory Management</h1>
+            <p className="text-neutral-600">
+              {isAdminView ? 'All branches stock overview' : 'Stock levels for current branch'}
+            </p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+            <TabsList className="bg-neutral-100 grid w-full grid-cols-2">
+              <TabsTrigger value="current">Current Stock</TabsTrigger>
+              <TabsTrigger value="history">Opening/Closing</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-          <TabsList className="bg-neutral-100 grid w-full grid-cols-2">
-            <TabsTrigger value="current">Current Stock</TabsTrigger>
-            <TabsTrigger value="history">Opening/Closing</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      )}
 
       {activeTab === 'current' ? (
         <>
@@ -316,9 +321,8 @@ export function InventoryScreen({ branchId }: InventoryScreenProps) {
                           <>
                             <td className="py-4 px-4">
                               <span
-                                className={`font-bold ${
-                                  isLowStock ? 'text-red-700' : 'text-neutral-900'
-                                }`}
+                                className={`font-bold ${isLowStock ? 'text-red-700' : 'text-neutral-900'
+                                  }`}
                               >
                                 {adminStock}kg
                               </span>
@@ -329,9 +333,8 @@ export function InventoryScreen({ branchId }: InventoryScreenProps) {
                               return (
                                 <td key={branch.id} className="py-4 px-4">
                                   <span
-                                    className={`font-semibold ${
-                                      isBranchLow ? 'text-red-700' : 'text-neutral-700'
-                                    }`}
+                                    className={`font-semibold ${isBranchLow ? 'text-red-700' : 'text-neutral-700'
+                                      }`}
                                   >
                                     {stockVal}kg
                                   </span>
@@ -342,9 +345,8 @@ export function InventoryScreen({ branchId }: InventoryScreenProps) {
                         ) : (
                           <td className="py-4 px-4">
                             <span
-                              className={`font-bold ${
-                                isLowStock ? 'text-red-700' : 'text-neutral-900'
-                              }`}
+                              className={`font-bold ${isLowStock ? 'text-red-700' : 'text-neutral-900'
+                                }`}
                             >
                               {branchStock}kg
                             </span>
@@ -400,7 +402,7 @@ export function InventoryScreen({ branchId }: InventoryScreenProps) {
                   const openingStock = sh.opening_stock || 0;
                   const closingStock = sh.closing_stock ?? null;
                   const variance = closingStock !== null ? (openingStock - closingStock) : 0;
-                  
+
                   return (
                     <tr key={sh.id} className="hover:bg-neutral-50">
                       <td className="py-4 px-4 text-sm text-neutral-600">{sh.date}</td>

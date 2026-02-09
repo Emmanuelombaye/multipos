@@ -166,7 +166,6 @@ export default function App() {
     } else {
       return [
         { id: 'pos', label: 'POS', icon: ShoppingCart },
-        { id: 'inventory', label: 'Stock', icon: Package },
       ];
     }
   };
@@ -293,29 +292,7 @@ export default function App() {
         {renderScreen()}
       </main>
 
-      {/* Mobile Bottom Navigation (for cashiers) */}
-      {userRole === 'cashier' && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-30">
-          <div className="flex justify-around">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentScreen(item.id as Screen)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-3 ${currentScreen === item.id
-                    ? 'text-red-700'
-                    : 'text-neutral-500'
-                    }`}
-                >
-                  <Icon className="w-6 h-6" />
-                  <span className="text-xs font-medium">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-      )}
+      {/* Mobile Bottom Navigation removed to prioritize Product-First POS Layout and avoid overlap with Floating Cart */}
     </div>
   );
 }
