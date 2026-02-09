@@ -47,15 +47,13 @@ export function AdminDashboard() {
         const startDate = new Date(endDate);
         startDate.setDate(endDate.getDate() - (days - 1));
 
-        // Create local ISO range for the entire timeframe in EAT (+03:00)
-        const formatEAT = (d: Date) => {
+        // Simple date-only format (DB is in EAT after conversion)
+        const formatDate = (d: Date) => {
           const pad = (n: number) => n.toString().padStart(2, '0');
-          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+03:00`;
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         };
-        const startISO = formatEAT(new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0));
-        const endISO = formatEAT(new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59));
-        const startDateStr = startISO.split('T')[0]; // For fallback
-        const endDateStr = endISO.split('T')[0];
+        const startDateStr = formatDate(new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+        const endDateStr = formatDate(new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
 
         // Fetch data from ALL branches and aggregate
         const allBranchData = await Promise.all(
@@ -63,8 +61,8 @@ export function AdminDashboard() {
             try {
               console.log(`Fetching data for branch: ${branch.name} (${branch.id})`);
               const [metrics, expenses, lowStock, transactions] = await Promise.all([
-                apiClient.getMetrics(branch.id, startISO, endISO),
-                apiClient.getExpensesByCategory(branch.id, startISO, endISO),
+                apiClient.getMetrics(branch.id, startDateStr, endDateStr),
+                apiClient.getExpensesByCategory(branch.id, startDateStr, endDateStr),
                 apiClient.getLowStockProducts(branch.id),
                 apiClient.getTransactionsByBranch(branch.id, 10)
               ]);

@@ -140,23 +140,24 @@ router.get('/metrics/:branchId', async (req, res, next) => {
       return;
     }
 
-    // Always treat these as ISO strings or local-start-of-day strings (EAT +03:00)
-    const startISO = startDate.includes('T') ? startDate : `${startDate}T00:00:00+03:00`;
-    const endISO = endDate.includes('T') ? endDate : `${endDate}T23:59:59.999+03:00`;
+    // Simple date-only queries (assumes DB is in EAT)
+    const cleanDate = (d) => d && d.split('T')[0];
+    const startDateStr = cleanDate(startDate);
+    const endDateStr = cleanDate(endDate);
 
     const { data: transactions } = await supabase
       .from('transactions')
       .select('total, created_at')
       .eq('branch_id', branchId)
-      .gte('created_at', startISO)
-      .lte('created_at', endISO);
+      .gte('created_at', startDateStr)
+      .lte('created_at', endDateStr);
 
     const { data: expenses } = await supabase
       .from('expenses')
       .select('amount, created_at')
       .eq('branch_id', branchId)
-      .gte('created_at', startISO)
-      .lte('created_at', endISO);
+      .gte('created_at', startDateStr)
+      .lte('created_at', endDateStr);
 
     // Group by date
     const dateMetrics = {};

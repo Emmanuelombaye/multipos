@@ -50,42 +50,31 @@ export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
 };
 
 export const getTotalExpensesByDay = async (branchId, dateStr) => {
-  // Ensure we use Local Kenyan Day (EAT)
-  const getLocalDate = () => {
-    const now = new Date();
-    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const nairobiTime = new Date(utcTime + (3 * 3600000));
-    return nairobiTime.toISOString().split('T')[0];
-  };
-  const date = dateStr || getLocalDate();
-  const startISO = `${date}T00:00:00+03:00`;
-  const endISO = `${date}T23:59:59.999+03:00`;
+  const date = dateStr || new Date().toISOString().split('T')[0];
 
   const { data, error } = await supabase
     .from('expenses')
     .select('amount')
     .eq('branch_id', branchId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO);
+    .gte('created_at', date)
+    .lt('created_at', date);
 
   if (error) throw error;
   return data?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
 };
 
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {
-  // Convert date strings to strict +03:00 (EAT) ranges
-  const isFullISO = (d) => d && d.includes('T') && (d.includes('Z') || d.includes('+') || d.includes('-'));
+  // Simple date-only queries (assumes DB is in EAT)
   const cleanDate = (d) => d && d.split('T')[0];
-
-  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
-  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999+03:00`;
+  const startDateStr = cleanDate(startDate);
+  const endDateStr = cleanDate(endDate);
 
   const { data, error } = await supabase
     .from('expenses')
     .select('category, amount')
     .eq('branch_id', branchId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO);
+    .gte('created_at', startDateStr)
+    .lte('created_at', endDateStr);
 
   if (error) throw error;
 

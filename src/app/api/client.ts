@@ -305,7 +305,7 @@ class APIClient {
 
   async getTransactionsByDateRange(branchId: string, startDate: string, endDate: string): Promise<any[]> {
     return this.cachedGet(
-      `/transactions/branch/${branchId}/range?startDate=${startDate}&endDate=${endDate}`,
+      `/transactions/branch/${branchId}/range?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
       0 // No cache for real-time data
     );
   }
@@ -416,7 +416,7 @@ class APIClient {
 
   async getExpensesByDateRange(branchId: string, startDate: string, endDate: string): Promise<any[]> {
     const response = await this.axios.get(
-      `/expenses/branch/${branchId}/range?startDate=${startDate}&endDate=${endDate}`
+      `/expenses/branch/${branchId}/range?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
     );
     return response.data;
   }
@@ -428,7 +428,7 @@ class APIClient {
 
   async getExpensesByCategory(branchId: string, startDate: string, endDate: string): Promise<any> {
     const response = await this.axios.get(
-      `/expenses/branch/${branchId}/by-category?startDate=${startDate}&endDate=${endDate}`
+      `/expenses/branch/${branchId}/by-category?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
     );
     return response.data;
   }
@@ -453,7 +453,7 @@ class APIClient {
 
   async getMetrics(branchId: string, startDate: string, endDate: string): Promise<any> {
     return this.cachedGet(
-      `/dashboard/metrics/${branchId}?startDate=${startDate}&endDate=${endDate}`,
+      `/dashboard/metrics/${branchId}?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
       5000
     );
   }

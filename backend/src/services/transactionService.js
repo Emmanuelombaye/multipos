@@ -97,23 +97,17 @@ export const getTransactionsByBranch = async (branchId, limit = 50, offset = 0) 
 };
 
 export const getTransactionsByDateRange = async (branchId, startDate, endDate) => {
-  // Convert date strings to timestamp ranges
-  // startDate: '2026-02-07' -> '2026-02-07T00:00:00Z'
-  // endDate: '2026-02-07' -> '2026-02-07T23:59:59Z'
-  // startDate: '2026-02-07' -> '2026-02-07T00:00:00Z'
-  // endDate: '2026-02-07' -> '2026-02-07T23:59:59.999Z'
-  const isFullISO = (d) => d && d.includes('T') && (d.includes('Z') || d.includes('+') || d.includes('-'));
+  // Simple date-only queries (assumes DB is in EAT)
   const cleanDate = (d) => d && d.split('T')[0];
-
-  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
-  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999+03:00`;
+  const startDateStr = cleanDate(startDate);
+  const endDateStr = cleanDate(endDate);
 
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
     .eq('branch_id', branchId)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
+    .gte('created_at', startDateStr)
+    .lte('created_at', endDateStr)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
