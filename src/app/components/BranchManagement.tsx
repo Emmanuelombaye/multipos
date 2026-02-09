@@ -131,11 +131,15 @@ export function BranchManagement() {
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    // Calculate local start and end of day in ISO format
+    // Calculate local start and end of day in EAT format (+03:00)
+    const formatEAT = (d: Date) => {
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+03:00`;
+    };
     const localStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
     const localEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
-    const startISO = localStart.toISOString();
-    const endISO = localEnd.toISOString();
+    const startISO = formatEAT(localStart);
+    const endISO = formatEAT(localEnd);
 
     console.log(`[BranchManagement] Loading metrics for ${dateStr} (Local: ${startISO} to ${endISO})`);
     setMetricsLoading(true);

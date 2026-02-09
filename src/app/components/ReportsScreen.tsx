@@ -88,11 +88,14 @@ export function ReportsScreen() {
       const startDateStr = toLocalDate(startDate);
       const endDateStr = toLocalDate(endDate);
 
-      // Create local ISO range for the entire timeframe
+      const formatEAT = (d: Date) => {
+        const p = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}+03:00`;
+      };
       const localStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
       const localEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
-      const startISO = localStart.toISOString();
-      const endISO = localEnd.toISOString();
+      const startISO = formatEAT(localStart);
+      const endISO = formatEAT(localEnd);
 
       const metricsByBranch = await Promise.all(
         safeBranches.map(async (branch) => {
@@ -121,10 +124,15 @@ export function ReportsScreen() {
       const totalExpenses = sortedChartData.reduce((sum, item) => sum + (item.expenses || 0), 0);
       const netGrowth = totalSales - totalExpenses;
 
-      const todayKey = endDate.toISOString().split('T')[0];
+      const formatEATDate = (d: Date) => {
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      };
+
+      const todayKey = formatEATDate(endDate);
       const yesterdayDate = new Date(endDate);
       yesterdayDate.setDate(endDate.getDate() - 1);
-      const yesterdayKey = yesterdayDate.toISOString().split('T')[0];
+      const yesterdayKey = formatEATDate(yesterdayDate);
 
       const todaySales = mergedMetrics[todayKey]?.sales || 0;
       const yesterdaySales = mergedMetrics[yesterdayKey]?.sales || 0;

@@ -48,10 +48,13 @@ export function AdminDashboard() {
         startDate.setDate(endDate.getDate() - (days - 1));
 
         // Create local ISO range for the entire timeframe
-        const localStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
-        const localEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
-        const startISO = localStart.toISOString();
-        const endISO = localEnd.toISOString();
+        // Create local ISO range for the entire timeframe in EAT (+03:00)
+        const formatEAT = (d: Date) => {
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+03:00`;
+        };
+        const startISO = formatEAT(new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0));
+        const endISO = formatEAT(new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59));
         const startDateStr = startISO.split('T')[0]; // For fallback
         const endDateStr = endISO.split('T')[0];
 

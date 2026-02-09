@@ -27,7 +27,13 @@ export function BranchDashboard({ branchId }: BranchDashboardProps) {
   const [branchStock, setBranchStock] = useState<Record<string, number>>({});
   const [chartData, setChartData] = useState<any[]>([]);
   const [stockVariance, setStockVariance] = useState(0);
-  const [varianceDate, setVarianceDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const getLocalDateString = () => {
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const nairobiTime = new Date(utcTime + (3 * 3600000));
+    return nairobiTime.toISOString().split('T')[0];
+  };
+  const [varianceDate, setVarianceDate] = useState<string>(getLocalDateString());
 
   const timeframeDays: Record<Timeframe, number> = {
     day: 1,
@@ -87,16 +93,21 @@ export function BranchDashboard({ branchId }: BranchDashboardProps) {
         setLoading(true);
       }
 
-      const varianceDateKey = varianceDate || new Date().toISOString().split('T')[0];
-      
-      // Calculate date range for metrics
-      const days = timeframeDays[timeframe];
-      const endDate = varianceDate ? new Date(varianceDate) : new Date();
-      const startDate = new Date(endDate);
-      startDate.setDate(endDate.getDate() - (days - 1));
+      const varianceDateKey = varianceDate || getLocalDateString();
 
-      const startISO = `${startDate.toISOString().split('T')[0]}T00:00:00.000Z`;
-      const endISO = `${endDate.toISOString().split('T')[0]}T23:59:59.999Z`;
+      // Calculate date range for metrics using EAT boundaries
+      const formatEAT = (d: Date) => {
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+03:00`;
+      };
+
+      const days = timeframeDays[timeframe];
+      const endDateVal = varianceDate ? new Date(varianceDate) : new Date();
+      const startDateVal = new Date(endDateVal);
+      startDateVal.setDate(endDateVal.getDate() - (days - 1));
+
+      const startISO = formatEAT(new Date(startDateVal.getFullYear(), startDateVal.getMonth(), startDateVal.getDate(), 0, 0, 0));
+      const endISO = formatEAT(new Date(endDateVal.getFullYear(), endDateVal.getMonth(), endDateVal.getDate(), 23, 59, 59));
 
       // Load critical data in parallel
       const [dashboard, stockHistory, metrics] = await Promise.all([
@@ -280,8 +291,8 @@ export function BranchDashboard({ branchId }: BranchDashboardProps) {
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="branchSales" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#b91c1c" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#b91c1c" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#b91c1c" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#b91c1c" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />

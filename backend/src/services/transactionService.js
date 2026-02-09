@@ -105,8 +105,8 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
   const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
   const cleanDate = (d) => d && d.split('T')[0];
 
-  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
-  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
+  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
+  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999+03:00`;
 
   const { data, error } = await supabase
     .from('transactions')
@@ -122,8 +122,8 @@ export const getTransactionsByDateRange = async (branchId, startDate, endDate) =
 
 export const getTotalSalesByDay = async (branchId, dateStr) => {
   const date = dateStr || new Date().toISOString().split('T')[0];
-  const startISO = `${date}T00:00:00Z`;
-  const endISO = `${date}T23:59:59.999Z`;
+  const startISO = `${date}T00:00:00+03:00`;
+  const endISO = `${date}T23:59:59.999+03:00`;
 
   const { data, error } = await supabase
     .from('transactions')

@@ -30,12 +30,12 @@ export const getExpensesByBranch = async (branchId, limit = 50, offset = 0) => {
 };
 
 export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
-  // Clean date input: strip time portion if present
-  const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
+  // Clean date input: ensure strict +03:00 (EAT) boundaries
+  const isFullISO = (d) => d && d.includes('T') && d.includes('+03:00');
   const cleanDate = (d) => d && d.split('T')[0];
 
-  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
-  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
+  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
+  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999+03:00`;
 
   const { data, error } = await supabase
     .from('expenses')
@@ -50,9 +50,16 @@ export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
 };
 
 export const getTotalExpensesByDay = async (branchId, dateStr) => {
-  const date = dateStr || new Date().toISOString().split('T')[0];
-  const startISO = `${date}T00:00:00Z`;
-  const endISO = `${date}T23:59:59.999Z`;
+  // Ensure we use Local Kenyan Day (EAT)
+  const getLocalDate = () => {
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const nairobiTime = new Date(utcTime + (3 * 3600000));
+    return nairobiTime.toISOString().split('T')[0];
+  };
+  const date = dateStr || getLocalDate();
+  const startISO = `${date}T00:00:00+03:00`;
+  const endISO = `${date}T23:59:59.999+03:00`;
 
   const { data, error } = await supabase
     .from('expenses')
@@ -66,13 +73,12 @@ export const getTotalExpensesByDay = async (branchId, dateStr) => {
 };
 
 export const getExpensesByCategory = async (branchId, startDate, endDate) => {
-  // Convert date strings to timestamp ranges
-  // Convert date strings to timestamp ranges
-  const isFullISO = (d) => d && d.includes('T') && d.includes('Z');
+  // Convert date strings to strict +03:00 (EAT) ranges
+  const isFullISO = (d) => d && d.includes('T') && d.includes('+03:00');
   const cleanDate = (d) => d && d.split('T')[0];
 
-  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00Z`;
-  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999Z`;
+  const startISO = isFullISO(startDate) ? startDate : `${cleanDate(startDate)}T00:00:00+03:00`;
+  const endISO = isFullISO(endDate) ? endDate : `${cleanDate(endDate)}T23:59:59.999+03:00`;
 
   const { data, error } = await supabase
     .from('expenses')

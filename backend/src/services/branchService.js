@@ -59,11 +59,15 @@ export const getBranchWithStats = async (branchId) => {
     .select('*', { count: 'exact', head: true })
     .eq('branch_id', branchId);
 
-  // Get today's sales using local midnight logic (approximate for Kenya UTC+3)
-  // This is a fallback; the frontend now calculates this precisely via transactions endpoint
-  const now = new Date();
-  const localStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const startISO = localStart.toISOString();
+  // Get today's sales using local EAT logic (+03:00)
+  const getLocalDate = () => {
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const nairobiTime = new Date(utcTime + (3 * 3600000));
+    return nairobiTime.toISOString().split('T')[0];
+  };
+  const today = getLocalDate();
+  const startISO = `${today}T00:00:00+03:00`;
 
   const { data: todayTransactions } = await supabase
     .from('transactions')

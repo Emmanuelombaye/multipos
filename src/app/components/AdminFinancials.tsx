@@ -105,11 +105,15 @@ export function AdminFinancials() {
     const safeDate = isValidDate ? selectedDate : getLocalDateString();
     const [yearVal, monthVal, dayVal] = safeDate.split('-').map(Number);
 
-    // Create local start and end of the selected day
+    // Create local ISO range for the entire timeframe in EAT (+03:00)
+    const formatEAT = (d: Date) => {
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+03:00`;
+    };
     const localStart = new Date(yearVal, monthVal - 1, dayVal, 0, 0, 0, 0);
     const localEnd = new Date(yearVal, monthVal - 1, dayVal, 23, 59, 59, 999);
-    const startISO = localStart.toISOString();
-    const endISO = localEnd.toISOString();
+    const startISO = formatEAT(localStart);
+    const endISO = formatEAT(localEnd);
 
     try {
       if (!silent) {
