@@ -33,22 +33,75 @@ export const recordStockEntry = async (productId, branchId, openingStock, date, 
 
 export const recordClosingStock = async (productId, branchId, closingStock, date) => {
   console.log(`[InventoryService] Recording closing stock: Product=${productId}, Branch=${branchId}, Date=${date}, Stock=${closingStock}`);
-  const { data, error } = await supabase
+
+  // 1. Check if we have an entry for today. 
+  // If not, we need to create one with an opening balance to prevent NOT NULL errors.
+  const { data: existing, error: fetchError } = await supabase
     .from('stock_history')
-    .upsert({
-      product_id: productId,
-      branch_id: branchId,
-      date,
-      closing_stock: closingStock
-    }, { onConflict: 'product_id,branch_id,date' })
-    .select()
+    .select('*')
+    .eq('product_id', productId)
+    .eq('branch_id', branchId)
+    .eq('date', date)
     .single();
 
-  if (error) {
-    console.error('[InventoryService] Upsert error:', error);
-    throw error;
+  if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+  let result;
+  if (!existing) {
+    // Fetch current stock to use as opening stock for this new record
+    const { data: branchStock } = await supabase
+      .from('branch_stock')
+      .select('current_stock')
+      .eq('branch_id', branchId)
+      .eq('product_id', productId)
+      .single();
+
+    const openingStock = branchStock?.current_stock || 0;
+
+    const { data, error: insertError } = await supabase
+      .from('stock_history')
+      .insert({
+        product_id: productId,
+        branch_id: branchId,
+        date,
+        opening_stock: openingStock,
+        closing_stock: closingStock,
+        added_by: 'Cashier (Closing)'
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+    result = data;
+  } else {
+    // Update existing record
+    const { data, error: updateError } = await supabase
+      .from('stock_history')
+      .update({ closing_stock: closingStock })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    result = data;
   }
-  return data;
+
+  // 2. CRITICAL SYNC: Update branch_stock to match the new physical count (closing stock)
+  // This ensures POS and Admin "Current Stock" reflects the physical count submitted by cashier
+  const { error: stockSyncError } = await supabase
+    .from('branch_stock')
+    .upsert({
+      branch_id: branchId,
+      product_id: productId,
+      current_stock: closingStock,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'branch_id,product_id' });
+
+  if (stockSyncError) {
+    console.error(`[InventoryService] Error syncing closing stock to branch_stock:`, stockSyncError);
+  }
+
+  return result;
 };
 
 export const getStockHistoryByBranch = async (branchId, limit = 50, offset = 0) => {

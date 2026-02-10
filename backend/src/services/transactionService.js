@@ -44,22 +44,38 @@ export const createTransaction = async (branchId, cashierId, items, paymentMetho
 
   // Update branch stock
   for (const item of items) {
-    const { data: stock } = await supabase
-      .from('branch_stock')
-      .select('current_stock')
-      .eq('branch_id', branchId)
-      .eq('product_id', item.productId)
-      .single();
+    try {
+      const { data: stock, error: fetchError } = await supabase
+        .from('branch_stock')
+        .select('current_stock')
+        .eq('branch_id', branchId)
+        .eq('product_id', item.productId)
+        .single();
 
-    const newStock = (stock?.current_stock || 0) - item.quantity;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error(`[TransactionService] Error fetching stock for product ${item.productId}:`, fetchError);
+        continue;
+      }
 
-    await supabase
-      .from('branch_stock')
-      .upsert({
-        branch_id: branchId,
-        product_id: item.productId,
-        current_stock: Math.max(0, newStock),
-      });
+      const currentStock = stock?.current_stock ? parseFloat(stock.current_stock) : 0;
+      const quantity = parseFloat(item.quantity) || 0;
+      const newStock = currentStock - quantity;
+
+      const { error: updateError } = await supabase
+        .from('branch_stock')
+        .upsert({
+          branch_id: branchId,
+          product_id: item.productId,
+          current_stock: Math.max(0, newStock),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'branch_id,product_id' });
+
+      if (updateError) {
+        console.error(`[TransactionService] Error updating stock for product ${item.productId}:`, updateError);
+      }
+    } catch (err) {
+      console.error(`[TransactionService] Unexpected error updating stock for product ${item.productId}:`, err);
+    }
   }
 
   return transaction;
