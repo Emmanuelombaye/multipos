@@ -1,5 +1,61 @@
 import { supabase } from '../db/supabase.js';
 
+export const ensureDailyHistory = async (productId, branchId, date) => {
+  // Check if a record already exists for this day
+  const { data: existing } = await supabase
+    .from('stock_history')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('product_id', productId)
+    .eq('date', date)
+    .maybeSingle();
+
+  if (existing) return existing;
+
+  // Initialize from previous closing stock
+  const { data: lastHistory } = await supabase
+    .from('stock_history')
+    .select('closing_stock')
+    .eq('branch_id', branchId)
+    .eq('product_id', productId)
+    .lt('date', date)
+    .order('date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let openingStock;
+  if (lastHistory && lastHistory.closing_stock !== null) {
+    openingStock = lastHistory.closing_stock;
+  } else {
+    // Fallback to live branch stock
+    const { data: branchStock } = await supabase
+      .from('branch_stock')
+      .select('current_stock')
+      .eq('branch_id', branchId)
+      .eq('product_id', productId)
+      .single();
+    openingStock = branchStock?.current_stock || 0;
+  }
+
+  const { data, error } = await supabase
+    .from('stock_history')
+    .insert({
+      product_id: productId,
+      branch_id: branchId,
+      date,
+      opening_stock: openingStock,
+      added_by: 'System (Auto-Init)'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`[InventoryService] Error auto-initializing history for ${productId}:`, error);
+    return null;
+  }
+  return data;
+};
+
 export const recordStockEntry = async (productId, branchId, openingStock, date, addedBy) => {
   const { data, error } = await supabase
     .from('stock_history')
@@ -34,59 +90,25 @@ export const recordStockEntry = async (productId, branchId, openingStock, date, 
 export const recordClosingStock = async (productId, branchId, closingStock, date) => {
   console.log(`[InventoryService] Recording closing stock: Product=${productId}, Branch=${branchId}, Date=${date}, Stock=${closingStock}`);
 
-  // 1. Check if we have an entry for today. 
-  // If not, we need to create one with an opening balance to prevent NOT NULL errors.
-  const { data: existing, error: fetchError } = await supabase
+  // 1. Ensure the daily record exists (inherits from yesterday if needed)
+  const history = await ensureDailyHistory(productId, branchId, date);
+  if (!history) throw new Error('Failed to access or initialize stock history');
+
+  // 2. Update existing record with the closing stock
+  const { data: updated, error: updateError } = await supabase
     .from('stock_history')
-    .select('*')
-    .eq('product_id', productId)
-    .eq('branch_id', branchId)
-    .eq('date', date)
+    .update({
+      closing_stock: closingStock,
+      added_by: 'Cashier (Closing)'
+    })
+    .eq('id', history.id)
+    .select()
     .single();
 
-  if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+  if (updateError) throw updateError;
+  const result = updated;
 
-  let result;
-  if (!existing) {
-    // Fetch current stock to use as opening stock for this new record
-    const { data: branchStock } = await supabase
-      .from('branch_stock')
-      .select('current_stock')
-      .eq('branch_id', branchId)
-      .eq('product_id', productId)
-      .single();
-
-    const openingStock = branchStock?.current_stock || 0;
-
-    const { data, error: insertError } = await supabase
-      .from('stock_history')
-      .insert({
-        product_id: productId,
-        branch_id: branchId,
-        date,
-        opening_stock: openingStock,
-        closing_stock: closingStock,
-        added_by: 'Cashier (Closing)'
-      })
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
-    result = data;
-  } else {
-    // Update existing record
-    const { data, error: updateError } = await supabase
-      .from('stock_history')
-      .update({ closing_stock: closingStock })
-      .eq('id', existing.id)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
-    result = data;
-  }
-
-  // 2. CRITICAL SYNC: Update branch_stock to match the new physical count (closing stock)
+  // 3. CRITICAL SYNC: Update branch_stock to match the new physical count (closing stock)
   // This ensures POS and Admin "Current Stock" reflects the physical count submitted by cashier
   const { error: stockSyncError } = await supabase
     .from('branch_stock')
@@ -225,17 +247,21 @@ export const addStock = async (branchId, productId, amount, addedBy) => {
 
   if (error) throw error;
 
-  // 3. Log to stock_history
+  // 3. Log to stock_history (Additive Opening Stock)
   const today = new Date().toISOString().split('T')[0];
-  await supabase
-    .from('stock_history')
-    .upsert({
-      product_id: productId,
-      branch_id: branchId,
-      opening_stock: newStock, // Opening stock for the current/next day
-      date: today,
-      added_by: addedBy || 'Admin'
-    }, { onConflict: 'branch_id,product_id,date' });
+
+  const history = await ensureDailyHistory(productId, branchId, today);
+  if (history) {
+    const updatedOpening = (parseFloat(history.opening_stock) || 0) + parseFloat(amount);
+    await supabase
+      .from('stock_history')
+      .update({
+        opening_stock: updatedOpening,
+        added_by: addedBy || 'Admin'
+      })
+      .eq('id', history.id);
+    console.log(`[InventoryService] Updated opening stock via addition: ${history.opening_stock} -> ${updatedOpening}`);
+  }
 
   return data;
 };

@@ -1,5 +1,6 @@
 import { supabase } from '../db/supabase.js';
 import { v4 as uuidv4 } from 'uuid';
+import { ensureDailyHistory } from './inventoryService.js';
 
 export const createTransaction = async (branchId, cashierId, items, paymentMethod) => {
   let total = 0;
@@ -42,9 +43,16 @@ export const createTransaction = async (branchId, cashierId, items, paymentMetho
 
   if (itemsError) throw itemsError;
 
+  // Today's date for history tracking
+  const today = new Date().toISOString().split('T')[0];
+
   // Update branch stock
   for (const item of items) {
     try {
+      // 1. Ensure history row exists so Opening Stock is visible immediately
+      await ensureDailyHistory(item.productId, branchId, today);
+
+      // 2. Update real-time balance
       const { data: stock, error: fetchError } = await supabase
         .from('branch_stock')
         .select('current_stock')
