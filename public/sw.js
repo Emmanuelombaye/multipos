@@ -23,21 +23,37 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-First Strategy for Navigation Requests (HTML)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/').then((response) => response || fetch(event.request))
+      fetch(event.request)
+        .then((networkResponse) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
     );
     return;
   }
 
+  // Stale-While-Revalidate Strategy for Other Requests (JS, CSS, Images, etc.)
+  // This serves cached content immediately, then updates the cache in the background
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        return response;
-      }
-      return fetch(event.request).then((networkResponse) => {
+    caches.match(event.request).then((cachedResponse) => {
+      const networkFetch = fetch(event.request).then((networkResponse) => {
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, networkResponse.clone());
+        });
         return networkResponse;
+      }).catch(() => {
+        // Network failure, return nothing (cached response served if available)
       });
+
+      return cachedResponse || networkFetch;
     })
   );
 });
