@@ -66,7 +66,7 @@ CREATE TABLE transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   branch_id UUID NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
   cashier_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-  payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('cash', 'mpesa', 'card')),
+  payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('cash', 'mpesa', 'card', 'loan')),
   total DECIMAL(10, 2) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
