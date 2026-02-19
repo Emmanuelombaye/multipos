@@ -248,7 +248,15 @@ export const addStock = async (branchId, productId, amount, addedBy) => {
   if (error) throw error;
 
   // 3. Log to stock_history (Additive Opening Stock)
-  const today = new Date().toISOString().split('T')[0];
+  const getKenyaDate = () => {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Nairobi',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  };
+  const today = getKenyaDate();
 
   const history = await ensureDailyHistory(productId, branchId, today);
   if (history) {

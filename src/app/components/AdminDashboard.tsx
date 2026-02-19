@@ -49,8 +49,12 @@ export function AdminDashboard() {
 
         // Simple date-only format (DB is in EAT after conversion)
         const formatDate = (d: Date) => {
-          const pad = (n: number) => n.toString().padStart(2, '0');
-          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+          return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Africa/Nairobi',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).format(d);
         };
         const startDateStr = formatDate(new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
         const endDateStr = formatDate(new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));

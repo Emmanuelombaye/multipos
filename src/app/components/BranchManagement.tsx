@@ -126,11 +126,13 @@ export function BranchManagement() {
   };
 
   const loadBranchMetrics = async (date: Date) => {
-    // Construct local YYYY-MM-DD string to avoid UTC timezone shifts
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    // Construct local YYYY-MM-DD string in Kenya Time (EAT)
+    const dateStr = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Nairobi',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date || new Date());
 
     // Calculate local start and end of day in EAT format (+03:00)
     const formatEAT = (d: Date) => {
@@ -499,7 +501,9 @@ export function BranchManagement() {
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-neutral-500">Closing Stock</p>
+                    <p className="text-xs text-neutral-500">
+                      {showActive ? 'Live Stock Balance' : 'Closing Stock'}
+                    </p>
                     {showActive && (
                       <Badge className="text-[10px] bg-emerald-100 text-emerald-700">ACTIVE</Badge>
                     )}

@@ -25,6 +25,10 @@ export function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [stockAmount, setStockAmount] = useState('0');
 
+  // Confirmation states
+  const [isConfirmingAdd, setIsConfirmingAdd] = useState(false);
+  const [isConfirmingStock, setIsConfirmingStock] = useState(false);
+
   // Form states
   const [formData, setFormData] = useState({
     name: '',
@@ -87,6 +91,13 @@ export function ProductManagement() {
       return;
     }
 
+    // Step 1: Move to confirmation
+    if (!isConfirmingAdd) {
+      setIsConfirmingAdd(true);
+      return;
+    }
+
+    // Step 2: Actually submit
     try {
       await apiClient.addProductToBranch(
         selectedBranchId,
@@ -100,6 +111,7 @@ export function ProductManagement() {
 
       toast.success('Product added to branch successfully');
       setShowAddDialog(false);
+      setIsConfirmingAdd(false);
       resetForm();
       await loadProducts();
     } catch (error: any) {
@@ -145,10 +157,16 @@ export function ProductManagement() {
   const handleAdjustStock = async () => {
     if (!selectedProduct || !selectedBranchId || !stockAmount) return;
 
+    if (!isConfirmingStock) {
+      setIsConfirmingStock(true);
+      return;
+    }
+
     try {
       await apiClient.addStock(selectedBranchId, selectedProduct.id, parseFloat(stockAmount));
       toast.success(`Added ${stockAmount}kg to ${selectedProduct.name}`);
       setShowStockDialog(false);
+      setIsConfirmingStock(false);
       setStockAmount('0');
       await loadProducts();
     } catch (error) {
@@ -367,78 +385,112 @@ export function ProductManagement() {
             <DialogTitle>Add Product to {selectedBranch?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="name">Product Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Beef - T-Bone"
-              />
-            </div>
-            <div>
-              <Label htmlFor="category">Category *</Label>
-              <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Meat">Meat</SelectItem>
-                  <SelectItem value="Poultry">Poultry</SelectItem>
-                  <SelectItem value="Fish">Fish</SelectItem>
-                  <SelectItem value="Offal">Offal</SelectItem>
-                  <SelectItem value="Processed">Processed</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="price">Price per Kg (KES) *</Label>
-              <Input
-                id="price"
-                type="number"
-                value={formData.pricePerKg}
-                onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
-                placeholder="e.g., 850"
-              />
-            </div>
-            <div>
-              <Label htmlFor="threshold">Low Stock Threshold (Kg)</Label>
-              <Input
-                id="threshold"
-                type="number"
-                value={formData.lowStockThreshold}
-                onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
-                placeholder="e.g., 20"
-              />
-            </div>
-            <div>
-              <Label htmlFor="image">Emoji Icon</Label>
-              <Input
-                id="image"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="e.g., 🥩"
-              />
-            </div>
-            <div>
-              <Label htmlFor="initialStock">Initial Stock (Kg)</Label>
-              <Input
-                id="initialStock"
-                type="number"
-                value={formData.initialStock}
-                onChange={(e) => setFormData({ ...formData, initialStock: e.target.value })}
-                placeholder="e.g., 100"
-              />
-            </div>
+            {!isConfirmingAdd ? (
+              <>
+                <div>
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Beef - T-Bone"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Meat">Meat</SelectItem>
+                      <SelectItem value="Poultry">Poultry</SelectItem>
+                      <SelectItem value="Fish">Fish</SelectItem>
+                      <SelectItem value="Offal">Offal</SelectItem>
+                      <SelectItem value="Processed">Processed</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="price">Price per Kg (KES) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={formData.pricePerKg}
+                    onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
+                    placeholder="e.g., 850"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="threshold">Low Stock Threshold (Kg)</Label>
+                  <Input
+                    id="threshold"
+                    type="number"
+                    value={formData.lowStockThreshold}
+                    onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
+                    placeholder="e.g., 20"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="image">Emoji Icon</Label>
+                  <Input
+                    id="image"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="e.g., 🥩"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="initialStock">Initial Stock (Kg)</Label>
+                  <Input
+                    id="initialStock"
+                    type="number"
+                    value={formData.initialStock}
+                    onChange={(e) => setFormData({ ...formData, initialStock: e.target.value })}
+                    placeholder="e.g., 100"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="bg-neutral-50 p-4 rounded-lg border space-y-3">
+                <h3 className="font-bold text-neutral-900 border-b pb-2">Review Product Details</h3>
+                <div className="grid grid-cols-2 gap-y-2 text-sm">
+                  <span className="text-neutral-500">Name:</span>
+                  <span className="font-medium">{formData.name}</span>
+                  <span className="text-neutral-500">Category:</span>
+                  <span className="font-medium">{formData.category}</span>
+                  <span className="text-neutral-500">Price:</span>
+                  <span className="font-medium">KES {parseFloat(formData.pricePerKg).toLocaleString()} /kg</span>
+                  <span className="text-neutral-500">Min. Stock:</span>
+                  <span className="font-medium">{formData.lowStockThreshold} kg</span>
+                  <span className="text-neutral-500">Start Stock:</span>
+                  <span className="font-bold text-red-700">{formData.initialStock} kg</span>
+                </div>
+                <p className="text-xs text-amber-600 font-medium pt-2">Please confirm if these details are correct before adding.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddProduct} className="bg-red-700 hover:bg-red-800">
-              Add Product
-            </Button>
+            {isConfirmingAdd ? (
+              <>
+                <Button variant="ghost" onClick={() => setIsConfirmingAdd(false)}>
+                  Back & Edit
+                </Button>
+                <Button onClick={handleAddProduct} className="bg-red-700 hover:bg-red-800">
+                  Confirm & Add Product
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => { setShowAddDialog(false); setIsConfirmingAdd(false); resetForm(); }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddProduct} className="bg-red-700 hover:bg-red-800">
+                  Review & Continue
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -519,41 +571,96 @@ export function ProductManagement() {
             <DialogTitle>Adjust Stock: {selectedProduct?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-neutral-50 rounded-lg border">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-neutral-600">Current Stock:</span>
-                <span className="font-bold">{selectedProduct?.current_stock} kg</span>
+            {!isConfirmingStock ? (
+              <>
+                <div className="p-4 bg-neutral-50 rounded-lg border">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-neutral-600">Current Stock:</span>
+                    <span className="font-bold">{selectedProduct?.current_stock} kg</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-600">Branch:</span>
+                    <span className="font-medium">{selectedBranch?.name}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="stock-add">Add Weight (Kg)</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="stock-add"
+                      type="number"
+                      value={stockAmount}
+                      onChange={(e) => setStockAmount(e.target.value)}
+                      placeholder="e.g., 20"
+                      className="flex-1"
+                    />
+                    <span className="flex items-center font-medium text-neutral-500">kg</span>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Enter a positive number to add stock, or a negative number to reduce stock.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="bg-neutral-900 text-white p-6 rounded-xl space-y-4 transition-all animate-in fade-in zoom-in duration-200">
+                <div className="flex items-center gap-3 border-b border-neutral-700 pb-3">
+                  <div className="p-2 bg-red-500/20 rounded-lg">
+                    <Package className="w-5 h-5 text-red-500" />
+                  </div>
+                  <h3 className="font-bold text-lg">Confirm Stock Update</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-neutral-400">Product</span>
+                    <span className="font-bold">{selectedProduct?.name}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="bg-neutral-800 p-3 rounded-lg text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">Current</p>
+                      <p className="text-xl font-bold">{selectedProduct?.current_stock}kg</p>
+                    </div>
+                    <div className="bg-red-900/40 p-3 rounded-lg text-center border border-red-500/30">
+                      <p className="text-[10px] uppercase tracking-wider text-red-400 mb-1">Change</p>
+                      <p className="text-xl font-bold text-red-500">+{stockAmount}kg</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-emerald-900/40 p-4 rounded-xl text-center border border-emerald-500/40">
+                    <p className="text-xs uppercase tracking-widest text-emerald-400 mb-1 font-bold">New Expected Total</p>
+                    <p className="text-3xl font-black text-emerald-500">
+                      {(Number(selectedProduct?.current_stock || 0) + Number(stockAmount || 0)).toFixed(2)}kg
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-neutral-400 text-center italic">
+                  This will also update today's Opening Stock record by {stockAmount}kg.
+                </p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-600">Branch:</span>
-                <span className="font-medium">{selectedBranch?.name}</span>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="stock-add">Add Weight (Kg)</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  id="stock-add"
-                  type="number"
-                  value={stockAmount}
-                  onChange={(e) => setStockAmount(e.target.value)}
-                  placeholder="e.g., 20"
-                  className="flex-1"
-                />
-                <span className="flex items-center font-medium text-neutral-500">kg</span>
-              </div>
-              <p className="text-xs text-neutral-500 mt-2">
-                Enter a positive number to add stock, or a negative number to reduce stock.
-              </p>
-            </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowStockDialog(false); setSelectedProduct(null); setStockAmount('0'); }}>
-              Cancel
-            </Button>
-            <Button onClick={handleAdjustStock} className="bg-green-700 hover:bg-green-800">
-              Update Stock
-            </Button>
+            {isConfirmingStock ? (
+              <>
+                <Button variant="ghost" onClick={() => setIsConfirmingStock(false)} className="text-neutral-400 hover:text-white hover:bg-neutral-800">
+                  Go Back
+                </Button>
+                <Button onClick={handleAdjustStock} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8">
+                  Confirm & Save
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => { setShowStockDialog(false); setSelectedProduct(null); setStockAmount('0'); setIsConfirmingStock(false); }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAdjustStock} className="bg-red-700 hover:bg-red-800">
+                  Review Change
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

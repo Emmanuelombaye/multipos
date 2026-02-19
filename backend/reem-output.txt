@@ -1,0 +1,32 @@
+﻿Branch: Edendrop Reem | ID: d63d73a2-c039-40c7-8a0b-aea168bcfd3b | Location: Reem Plaza | Status: open
+
+=== STOCK HISTORY for 2026-02-17 ===
+1. KukuKienyeji (Meat)
+   Opening Stock: 30
+   Closing Stock: (not set)
+   Added By: Admin User
+2. Matumbo__ (Meat)
+   Opening Stock: 21
+   Closing Stock: (not set)
+   Added By: Admin User
+3. BroilerKuku (Meat)
+   Opening Stock: 355
+   Closing Stock: (not set)
+   Added By: Admin User
+4. Beef-- (Meat)
+   Opening Stock: 246
+   Closing Stock: (not set)
+   Added By: Admin User
+5. Goat-- (Meat)
+   Opening Stock: 33.6
+   Closing Stock: (not set)
+   Added By: Admin User
+
+=== CURRENT BRANCH STOCK ===
+1. Matumbo__ - Current: 7 | Updated: 2026-02-17T11:08:33.781
+2. Minced meat-- - Current: 0 | Updated: 2026-02-17T13:31:20.946133
+3. Oxtail___ - Current: 0 | Updated: 2026-02-17T13:32:49.569351
+4. BroilerKuku - Current: 71 | Updated: 2026-02-17T11:10:10.554
+5. Beef-- - Current: 123 | Updated: 2026-02-17T11:11:52.188
+6. Goat-- - Current: 16.8 | Updated: 2026-02-17T11:12:29.08
+7. KukuKienyeji - Current: 6 | Updated: 2026-02-17T11:14:50.314

@@ -1,0 +1,22 @@
+﻿=== PROPOSED CHANGES (Opening Stock -> Current Stock) ===
+
+KukuKienyeji:  30  -->  6
+Matumbo__:  21  -->  7
+BroilerKuku:  355  -->  71
+Beef--:  246  -->  123
+Goat--:  33.6  -->  16.8
+Minced meat--:  (no entry) -->  0 [NEW RECORD]
+Oxtail___:  (no entry) -->  0 [NEW RECORD]
+
+Total updates: 7
+
+=== APPLYING CHANGES ===
+UPDATED: KukuKienyeji = 6
+UPDATED: Matumbo__ = 7
+UPDATED: BroilerKuku = 71
+UPDATED: Beef-- = 123
+UPDATED: Goat-- = 16.8
+INSERTED: Minced meat-- = 0
+INSERTED: Oxtail___ = 0
+
+=== DONE === Success: 7 | Failed: 0

@@ -43,8 +43,16 @@ export const createTransaction = async (branchId, cashierId, items, paymentMetho
 
   if (itemsError) throw itemsError;
 
-  // Today's date for history tracking
-  const today = new Date().toISOString().split('T')[0];
+  // Today's date for history tracking in Kenya Time (EAT)
+  const getKenyaDate = () => {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Nairobi',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  };
+  const today = getKenyaDate();
 
   // Update branch stock
   for (const item of items) {
@@ -52,34 +60,15 @@ export const createTransaction = async (branchId, cashierId, items, paymentMetho
       // 1. Ensure history row exists so Opening Stock is visible immediately
       await ensureDailyHistory(item.productId, branchId, today);
 
-      // 2. Update real-time balance
-      const { data: stock, error: fetchError } = await supabase
-        .from('branch_stock')
-        .select('current_stock')
-        .eq('branch_id', branchId)
-        .eq('product_id', item.productId)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error(`[TransactionService] Error fetching stock for product ${item.productId}:`, fetchError);
-        continue;
-      }
-
-      const currentStock = stock?.current_stock ? parseFloat(stock.current_stock) : 0;
-      const quantity = parseFloat(item.quantity) || 0;
-      const newStock = currentStock - quantity;
-
-      const { error: updateError } = await supabase
-        .from('branch_stock')
-        .upsert({
-          branch_id: branchId,
-          product_id: item.productId,
-          current_stock: Math.max(0, newStock),
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'branch_id,product_id' });
+      // 2. Atomic update via PostgreSQL function (prevents race conditions)
+      const { error: updateError } = await supabase.rpc('reduce_branch_stock', {
+        p_branch_id: branchId,
+        p_product_id: item.productId,
+        p_quantity: parseFloat(item.quantity) || 0
+      });
 
       if (updateError) {
-        console.error(`[TransactionService] Error updating stock for product ${item.productId}:`, updateError);
+        console.error(`[TransactionService] Error calling rpc.reduce_branch_stock for ${item.productId}:`, updateError);
       }
     } catch (err) {
       console.error(`[TransactionService] Unexpected error updating stock for product ${item.productId}:`, err);
