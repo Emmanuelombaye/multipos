@@ -738,7 +738,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Dispatching Branch <span className="text-red-500">*</span></label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={dispatchForm.branchId}
                     onChange={(e) => setDispatchForm((f) => ({ ...f, branchId: e.target.value }))}
                   >
@@ -750,11 +750,11 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Product <span className="text-red-500">*</span></label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={dispatchForm.productId}
                     onChange={(e) => setDispatchForm((f) => ({ ...f, productId: e.target.value }))}
                   >
@@ -779,7 +779,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Client Name <span className="text-red-500">*</span></label>
                   <Input
@@ -791,7 +791,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Client Type <span className="text-red-500">*</span></label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={dispatchForm.clientType}
                     onChange={(e) => setDispatchForm((f) => ({ ...f, clientType: e.target.value }))}
                   >
@@ -804,7 +804,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Quantity (kg) <span className="text-red-500">*</span></label>
                   <Input
@@ -832,11 +832,11 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Payment Status</label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={dispatchForm.paymentStatus}
                     onChange={(e) => setDispatchForm((f) => ({ ...f, paymentStatus: e.target.value }))}
                   >
@@ -848,7 +848,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Payment Method</label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={dispatchForm.paymentMethod}
                     onChange={(e) => setDispatchForm((f) => ({ ...f, paymentMethod: e.target.value }))}
                   >
@@ -905,7 +905,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Product</label>
                 <select
-                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
                   value={transferForm.productId}
                   onChange={(e) => setTransferForm((f) => ({ ...f, productId: e.target.value }))}
                 >
@@ -920,7 +920,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">From Branch</label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
                     value={transferForm.fromBranchId}
                     onChange={(e) => setTransferForm((f) => ({ ...f, fromBranchId: e.target.value }))}
                   >
@@ -941,7 +941,7 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">To Branch</label>
                   <select
-                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
                     value={transferForm.toBranchId}
                     onChange={(e) => setTransferForm((f) => ({ ...f, toBranchId: e.target.value }))}
                   >
@@ -1011,3 +1011,4 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
     </div>
   );
 }
+
