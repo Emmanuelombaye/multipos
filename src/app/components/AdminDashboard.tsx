@@ -36,12 +36,15 @@ export function AdminDashboard() {
       const dashboard = await apiClient.getAdminDashboard();
       setDashboardData(dashboard);
 
-      // Fetch branches
-      const branches = await apiClient.getBranches();
-      const branchesArray = Array.isArray(branches) ? branches : [];
-      setBranchesData(branchesArray);
+      const branchList = await apiClient.getBranches();
+      const branchesArray = Array.isArray(branchList) ? branchList : [];
 
       if (branchesArray.length > 0) {
+        // Fetch branches with stats (includes staffCount + todaySales)
+        const branchesWithStats = await Promise.all(
+          branchesArray.map(b => apiClient.getBranch(b.id))
+        );
+        setBranchesData(branchesWithStats.filter(Boolean));
         const days = timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 90;
         const endDate = new Date();
         const startDate = new Date(endDate);
@@ -153,7 +156,7 @@ export function AdminDashboard() {
   // Move calculations to top to avoid React Hook violations (Error #310)
   const totalSales = dashboardData?.total_sales || 0;
   const activeBranches = branchesData.filter((b: any) => b.status === 'open').length;
-  const totalStaff = branchesData.reduce((sum, b) => sum + (b.staffCount || 0), 0) || dashboardData?.total_staff || 0;
+  const totalStaff = dashboardData?.total_staff || branchesData.reduce((sum, b) => sum + (b.staffCount || 0), 0);
   const alertCount = dashboardData?.low_stock_count || lowStockProducts.length;
 
   // Calculate real growth (Simple comparison of today vs yesterday for the KPI card)
@@ -278,7 +281,7 @@ export function AdminDashboard() {
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" stroke="#6b7280" />
+              <XAxis dataKey="date" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
@@ -354,11 +357,15 @@ export function AdminDashboard() {
           <h3 className="font-semibold text-neutral-900 mb-4">Low Stock Items</h3>
           <div className="space-y-3">
             {Array.isArray(lowStockProducts) && lowStockProducts.length > 0 ? (
-              lowStockProducts.slice(0, 5).map((product: any, idx: number) => (
+              lowStockProducts.slice(0, 5).map((item: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-neutral-900">{product.name}</p>
-                    <p className="text-xs text-neutral-500">{product.stock || 0}kg available</p>
+                    <p className="text-sm font-medium text-neutral-900">
+                      {item.products?.name || item.name || 'Unknown Product'}
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      {item.current_stock ?? item.stock ?? 0}kg available
+                    </p>
                   </div>
                   <Badge variant="destructive">Alert</Badge>
                 </div>
@@ -370,7 +377,6 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Branch Performance */}
       <Card className="p-6">
         <h3 className="font-semibold text-neutral-900 mb-4">Branch Performance</h3>
         <div className="overflow-x-auto">
@@ -378,7 +384,11 @@ export function AdminDashboard() {
             <thead className="bg-neutral-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-700">Branch</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-700">Status</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Today Sales</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Today Expenses</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Profit</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Staff</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Location</th>
               </tr>
             </thead>
@@ -386,11 +396,23 @@ export function AdminDashboard() {
               {branchesData.map((branch: any, idx: number) => (
                 <tr key={idx} className="border-b hover:bg-neutral-50">
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{branch.name}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3">
                     <Badge className={branch.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                       {branch.status}
                     </Badge>
                   </td>
+                  <td className="px-4 py-3 text-right text-sm font-semibold text-green-700">
+                    KES {(branch.todaySales || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right text-sm font-semibold text-red-700">
+                    KES {(branch.todayExpenses || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right text-sm font-semibold">
+                    <span className={(branch.todaySales || 0) - (branch.todayExpenses || 0) >= 0 ? 'text-green-700' : 'text-red-700'}>
+                      KES {((branch.todaySales || 0) - (branch.todayExpenses || 0)).toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{branch.staffCount || 0}</td>
                   <td className="px-4 py-3 text-right text-sm text-neutral-600">{branch.location}</td>
                 </tr>
               ))}

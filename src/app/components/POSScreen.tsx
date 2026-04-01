@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Trash2, Printer, CreditCard, Smartphone, Banknote, Plus, Minus, Receipt, PackageSearch, Loader, RefreshCw, Store } from 'lucide-react';
+import { ShoppingCart, Trash2, Printer, CreditCard, Smartphone, Banknote, Plus, Minus, Receipt, PackageSearch, Loader, RefreshCw, Store, Handshake } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -180,7 +180,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
     toast.success('Cart cleared');
   };
 
-  const handlePayment = async (method: 'cash' | 'mpesa' | 'card') => {
+  const handlePayment = async (method: 'cash' | 'mpesa' | 'loan') => {
     if (cart.length === 0) {
       toast.error('Cart is empty');
       return;
@@ -723,11 +723,11 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                     M-Pesa
                   </Button>
                   <Button
-                    onClick={() => { handlePayment('card'); setShowCartSheet(false); }}
+                    onClick={() => { handlePayment('loan'); setShowCartSheet(false); }}
                     className="h-12 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl flex items-center justify-center gap-2"
                   >
-                    <CreditCard className="w-4 h-4" />
-                    Card
+                    <Handshake className="w-4 h-4" />
+                    Loan
                   </Button>
                 </div>
               </div>
@@ -808,8 +808,8 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 <Button onClick={() => handlePayment('mpesa')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-600 text-white font-bold">
                   M-Pesa
                 </Button>
-                <Button onClick={() => handlePayment('card')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-blue-700 text-white font-bold">
-                  Card
+                <Button onClick={() => handlePayment('loan')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                  Loan
                 </Button>
               </div>
             </div>

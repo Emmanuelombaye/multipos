@@ -71,9 +71,20 @@ export const getBranchWithStats = async (branchId) => {
 
   const todaySales = todayTransactions?.reduce((sum, t) => sum + t.total, 0) || 0;
 
+  const { data: todayExpenseRows } = await supabase
+    .from('expenses')
+    .select('amount')
+    .eq('branch_id', branchId)
+    .gte('created_at', `${today} 00:00:00`)
+    .lte('created_at', `${today} 23:59:59`);
+
+  const todayExpenses = todayExpenseRows?.reduce((sum, e) => sum + e.amount, 0) || 0;
+
   return {
     ...branch,
     staffCount: staffCount || 0,
     todaySales,
+    todayExpenses,
+    profit: todaySales - todayExpenses,
   };
 };

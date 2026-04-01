@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Package, AlertTriangle, TrendingUp, Search, History, ArrowRightLeft } from 'lucide-react';
+import { Package, AlertTriangle, TrendingUp, Search, ArrowRightLeft, ArrowRight, Truck, CheckCircle, Clock, DollarSign } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
@@ -22,11 +22,113 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
   const [products, setProducts] = useState<any[]>([]);
   const [stockByBranch, setStockByBranch] = useState<Record<string, any[]>>({});
   const [stockHistoryData, setStockHistoryData] = useState<any[]>([]);
+  const [transferModal, setTransferModal] = useState(false);
+  const [transferForm, setTransferForm] = useState({ fromBranchId: '', toBranchId: '', productId: '', quantity: '', notes: '' });
+  const [transferring, setTransferring] = useState(false);
+  const [transfers, setTransfers] = useState<any[]>([]);
+  const [transfersLoading, setTransfersLoading] = useState(false);
+  const [dispatchModal, setDispatchModal] = useState(false);
+  const [dispatchForm, setDispatchForm] = useState({
+    branchId: '', productId: '', clientName: '', clientType: 'hotel',
+    quantity: '', pricePerKg: '', paymentStatus: 'pending', paymentMethod: '', notes: '', dispatchDate: ''
+  });
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatches, setDispatches] = useState<any[]>([]);
+  const [dispatchesLoading, setDispatchesLoading] = useState(false);
 
   const isAdminView = !branchId;
 
+  const loadDispatches = async () => {
+    setDispatchesLoading(true);
+    try {
+      const target = branchId || 'all';
+      const result = await apiClient.getExternalDispatches(target, 100, 0);
+      setDispatches(Array.isArray(result?.data) ? result.data : []);
+    } catch {
+      toast.error('Failed to load dispatches');
+    } finally {
+      setDispatchesLoading(false);
+    }
+  };
+
+  const loadTransfers = async () => {
+    setTransfersLoading(true);
+    try {
+      const result = await apiClient.getStockTransfers(branchId || undefined, 100, 0);
+      setTransfers(Array.isArray(result?.data) ? result.data : []);
+    } catch {
+      toast.error('Failed to load transfer log');
+    } finally {
+      setTransfersLoading(false);
+    }
+  };
+
+  const handleDispatch = async () => {
+    const { branchId: fBranch, productId: fProduct, clientName, clientType, quantity, pricePerKg, paymentStatus, paymentMethod, notes, dispatchDate } = dispatchForm;
+    if (!fBranch || !fProduct || !clientName || !clientType || !quantity || !pricePerKg || !dispatchDate) {
+      toast.error('All required fields must be filled');
+      return;
+    }
+    const qty = parseFloat(quantity);
+    const ppkg = parseFloat(pricePerKg);
+    if (isNaN(qty) || qty <= 0 || isNaN(ppkg) || ppkg <= 0) {
+      toast.error('Enter valid quantity and price');
+      return;
+    }
+    setDispatching(true);
+    try {
+      await apiClient.createExternalDispatch({
+        branchId: fBranch, productId: fProduct, clientName, clientType,
+        quantity: qty, pricePerKg: ppkg, paymentStatus,
+        paymentMethod: paymentMethod || undefined,
+        notes: notes || undefined, dispatchDate
+      });
+      toast.success(`Dispatched ${qty}kg to ${clientName}`);
+      setDispatchModal(false);
+      setDispatchForm({ branchId: '', productId: '', clientName: '', clientType: 'hotel', quantity: '', pricePerKg: '', paymentStatus: 'pending', paymentMethod: '', notes: '', dispatchDate: '' });
+      loadInventoryData();
+      loadDispatches();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || err?.message || 'Dispatch failed');
+    } finally {
+      setDispatching(false);
+    }
+  };
+
+  const handleTransfer = async () => {
+    const { fromBranchId, toBranchId, productId, quantity } = transferForm;
+    if (!fromBranchId || !toBranchId || !productId || !quantity) {
+      toast.error('All fields are required');
+      return;
+    }
+    if (fromBranchId === toBranchId) {
+      toast.error('Source and destination branches must be different');
+      return;
+    }
+    const qty = parseFloat(quantity);
+    if (isNaN(qty) || qty <= 0) {
+      toast.error('Enter a valid quantity');
+      return;
+    }
+    setTransferring(true);
+    try {
+      await apiClient.transferStock(fromBranchId, toBranchId, productId, qty, transferForm.notes || undefined);
+      toast.success(`Transferred ${qty}kg successfully`);
+      setTransferModal(false);
+      setTransferForm({ fromBranchId: '', toBranchId: '', productId: '', quantity: '', notes: '' });
+      loadInventoryData();
+      loadTransfers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || err?.message || 'Transfer failed');
+    } finally {
+      setTransferring(false);
+    }
+  };
+
   useEffect(() => {
     loadBaseData();
+    loadDispatches();
+    loadTransfers();
   }, [branchId]);
 
   useEffect(() => {
@@ -186,12 +288,35 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
             </p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-            <TabsList className="bg-neutral-100 grid w-full grid-cols-2">
-              <TabsTrigger value="current">Current Stock</TabsTrigger>
-              <TabsTrigger value="history">Opening/Closing</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-3">
+            {isAdminView && (
+              <button
+                onClick={() => setTransferModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-medium text-sm"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
+                Transfer
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setDispatchForm((f) => ({ ...f, branchId: branchId || (branches[0]?.id || ''), dispatchDate: new Date().toISOString().split('T')[0] }));
+                setDispatchModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm"
+            >
+              <Truck className="w-4 h-4" />
+              Dispatch
+            </button>
+            <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'dispatches') loadDispatches(); if (v === 'transfers') loadTransfers(); }} className="w-full md:w-auto">
+              <TabsList className="bg-neutral-100 grid w-full grid-cols-4">
+                <TabsTrigger value="current">Stock</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+                <TabsTrigger value="transfers">Transfers</TabsTrigger>
+                <TabsTrigger value="dispatches">Dispatches</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       )}
 
@@ -375,6 +500,160 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
             </div>
           </Card>
         </>
+      ) : activeTab === 'transfers' ? (
+        <Card className="overflow-hidden">
+          <div className="p-4 border-b bg-neutral-50 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-neutral-900">Internal Stock Transfers</h3>
+              <p className="text-xs text-neutral-500 mt-0.5">Branch-to-branch transfer audit log — immutable record</p>
+            </div>
+            <Badge className="bg-red-700 flex items-center gap-1"><ArrowRightLeft className="w-3 h-3" />{transfers.length} records</Badge>
+          </div>
+          {transfersLoading ? (
+            <div className="p-8 text-center text-neutral-500">Loading transfers...</div>
+          ) : transfers.length === 0 ? (
+            <div className="p-8 text-center text-neutral-400">
+              <ArrowRightLeft className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p>No internal transfers recorded yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-neutral-100 border-b border-neutral-200">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Product</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">From</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">To</th>
+                    <th className="text-right py-3 px-4 font-semibold text-neutral-700 text-sm">Qty</th>
+                    <th className="text-right py-3 px-4 font-semibold text-neutral-700 text-sm">From Stock</th>
+                    <th className="text-right py-3 px-4 font-semibold text-neutral-700 text-sm">To Stock</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">By</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {transfers.map((t) => {
+                    const product = productById[t.product_id];
+                    const fromBranch = branchById[t.from_branch_id];
+                    const toBranch = branchById[t.to_branch_id];
+                    return (
+                      <tr key={t.id} className="hover:bg-neutral-50">
+                        <td className="py-3 px-4 text-sm text-neutral-600">{t.transfer_date}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1">
+                            <span>{product?.image || '🥩'}</span>
+                            <span className="text-sm font-medium">{product?.name || '—'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <p className="text-sm font-medium text-neutral-800">{fromBranch?.name?.split(' - ')[0] || '—'}</p>
+                          <p className="text-xs text-neutral-400">{t.from_stock_before}kg → {t.from_stock_after}kg</p>
+                        </td>
+                        <td className="py-3 px-4">
+                          <p className="text-sm font-medium text-neutral-800">{toBranch?.name?.split(' - ')[0] || '—'}</p>
+                          <p className="text-xs text-neutral-400">{t.to_stock_before}kg → {t.to_stock_after}kg</p>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="font-bold text-red-700">{t.quantity}kg</span>
+                        </td>
+                        <td className="py-3 px-4 text-right text-xs text-neutral-500">
+                          <span className="line-through text-neutral-400">{t.from_stock_before}kg</span><br />
+                          <span className="font-semibold text-neutral-700">{t.from_stock_after}kg</span>
+                        </td>
+                        <td className="py-3 px-4 text-right text-xs text-neutral-500">
+                          <span className="line-through text-neutral-400">{t.to_stock_before}kg</span><br />
+                          <span className="font-semibold text-green-700">{t.to_stock_after}kg</span>
+                        </td>
+                        <td className="py-3 px-4 text-xs text-neutral-500">{t.transferred_by}</td>
+                        <td className="py-3 px-4 text-xs text-neutral-400 max-w-[120px] truncate">{t.notes || '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      ) : activeTab === 'dispatches' ? (
+        <Card className="overflow-hidden">
+          <div className="p-4 border-b bg-neutral-50 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-neutral-900">External Dispatches</h3>
+              <p className="text-xs text-neutral-500 mt-0.5">Stock sent to hotels, villas, schools &amp; other clients</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-xs text-neutral-500">Total Value</p>
+                <p className="font-bold text-orange-700">
+                  KES {dispatches.reduce((s, d) => s + parseFloat(d.total_value || 0), 0).toLocaleString()}
+                </p>
+              </div>
+              <Badge className="bg-orange-600 flex items-center gap-1"><Truck className="w-3 h-3" />{dispatches.length} records</Badge>
+            </div>
+          </div>
+          {dispatchesLoading ? (
+            <div className="p-8 text-center text-neutral-500">Loading dispatches...</div>
+          ) : dispatches.length === 0 ? (
+            <div className="p-8 text-center text-neutral-400">
+              <Truck className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p>No external dispatches recorded yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-neutral-100 border-b border-neutral-200">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Client</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Branch</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Product</th>
+                    <th className="text-right py-3 px-4 font-semibold text-neutral-700 text-sm">Qty</th>
+                    <th className="text-right py-3 px-4 font-semibold text-neutral-700 text-sm">Price/kg</th>
+                    <th className="text-right py-3 px-4 font-semibold text-neutral-700 text-sm">Total</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Payment</th>
+                    <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">By</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {dispatches.map((d) => {
+                    const product = productById[d.product_id];
+                    const branch = branchById[d.branch_id];
+                    return (
+                      <tr key={d.id} className="hover:bg-neutral-50">
+                        <td className="py-3 px-4 text-sm text-neutral-600">{d.dispatch_date}</td>
+                        <td className="py-3 px-4">
+                          <p className="font-medium text-sm text-neutral-900">{d.client_name}</p>
+                          <p className="text-xs text-neutral-400 capitalize">{d.client_type}</p>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-neutral-600">{branch?.name?.split(' - ')[0] || '—'}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1">
+                            <span>{product?.image || '🥩'}</span>
+                            <span className="text-sm">{product?.name || '—'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold text-sm">{d.quantity}kg</td>
+                        <td className="py-3 px-4 text-right text-sm text-neutral-600">KES {parseFloat(d.price_per_kg).toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-bold text-orange-700 text-sm">KES {parseFloat(d.total_value).toLocaleString()}</td>
+                        <td className="py-3 px-4">
+                          {d.payment_status === 'paid' ? (
+                            <Badge className="bg-green-100 text-green-700 border-0 text-xs flex items-center gap-1 w-fit"><CheckCircle className="w-3 h-3" />Paid</Badge>
+                          ) : d.payment_status === 'partial' ? (
+                            <Badge className="bg-yellow-100 text-yellow-700 border-0 text-xs flex items-center gap-1 w-fit"><DollarSign className="w-3 h-3" />Partial</Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-700 border-0 text-xs flex items-center gap-1 w-fit"><Clock className="w-3 h-3" />Pending</Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-xs text-neutral-500">{d.dispatched_by}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       ) : (
         <Card className="overflow-hidden">
           <div className="p-4 border-b bg-neutral-50 flex items-center justify-between">
@@ -437,6 +716,280 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
             </table>
           </div>
         </Card>
+      )}
+
+      {/* Dispatch Modal */}
+      {dispatchModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-neutral-900">External Stock Dispatch</h2>
+                <p className="text-xs text-neutral-500">Record stock sent to hotels, villas, schools, etc.</p>
+              </div>
+              <button onClick={() => setDispatchModal(false)} className="text-neutral-400 hover:text-neutral-700 text-xl font-bold">×</button>
+            </div>
+
+            <div className="space-y-3">
+              {/* Branch — only show selector in admin view */}
+              {isAdminView && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Dispatching Branch <span className="text-red-500">*</span></label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={dispatchForm.branchId}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, branchId: e.target.value }))}
+                  >
+                    <option value="">Select branch...</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name.split(' - ')[0]}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Product <span className="text-red-500">*</span></label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={dispatchForm.productId}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, productId: e.target.value }))}
+                  >
+                    <option value="">Select product...</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.image || '🥩'} {p.name}</option>
+                    ))}
+                  </select>
+                  {dispatchForm.branchId && dispatchForm.productId && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Available: <span className="font-semibold text-neutral-700">{branchStockMap[dispatchForm.branchId]?.[dispatchForm.productId] ?? 0}kg</span>
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Dispatch Date <span className="text-red-500">*</span></label>
+                  <Input
+                    type="date"
+                    value={dispatchForm.dispatchDate}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, dispatchDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Client Name <span className="text-red-500">*</span></label>
+                  <Input
+                    placeholder="e.g. Serena Hotel"
+                    value={dispatchForm.clientName}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, clientName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Client Type <span className="text-red-500">*</span></label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={dispatchForm.clientType}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, clientType: e.target.value }))}
+                  >
+                    <option value="hotel">🏨 Hotel</option>
+                    <option value="villa">🏡 Villa</option>
+                    <option value="school">🏫 School</option>
+                    <option value="restaurant">🍽️ Restaurant</option>
+                    <option value="other">📦 Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Quantity (kg) <span className="text-red-500">*</span></label>
+                  <Input
+                    type="number" min="0.1" step="0.1" placeholder="e.g. 20"
+                    value={dispatchForm.quantity}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, quantity: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Price/kg (KES) <span className="text-red-500">*</span></label>
+                  <Input
+                    type="number" min="0" step="0.01" placeholder="e.g. 850"
+                    value={dispatchForm.pricePerKg}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, pricePerKg: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {dispatchForm.quantity && dispatchForm.pricePerKg && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2 flex items-center justify-between">
+                  <span className="text-sm text-orange-700">Total Dispatch Value</span>
+                  <span className="font-bold text-orange-800">
+                    KES {(parseFloat(dispatchForm.quantity || '0') * parseFloat(dispatchForm.pricePerKg || '0')).toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Payment Status</label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={dispatchForm.paymentStatus}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, paymentStatus: e.target.value }))}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="partial">Partial</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Payment Method</label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={dispatchForm.paymentMethod}
+                    onChange={(e) => setDispatchForm((f) => ({ ...f, paymentMethod: e.target.value }))}
+                  >
+                    <option value="">Select...</option>
+                    <option value="cash">Cash</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="card">Card</option>
+                    <option value="invoice">Invoice</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Notes (optional)</label>
+                <Input
+                  placeholder="e.g. Weekly standing order, delivery included"
+                  value={dispatchForm.notes}
+                  onChange={(e) => setDispatchForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDispatchModal(false)}
+                className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDispatch}
+                disabled={dispatching}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Truck className="w-4 h-4" />
+                {dispatching ? 'Dispatching...' : 'Confirm Dispatch'}
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {transferModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-neutral-900">Transfer Stock Between Branches</h2>
+              <button onClick={() => setTransferModal(false)} className="text-neutral-400 hover:text-neutral-700 text-xl font-bold">×</button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Product</label>
+                <select
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  value={transferForm.productId}
+                  onChange={(e) => setTransferForm((f) => ({ ...f, productId: e.target.value }))}
+                >
+                  <option value="">Select product...</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.image || '🥩'} {p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">From Branch</label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    value={transferForm.fromBranchId}
+                    onChange={(e) => setTransferForm((f) => ({ ...f, fromBranchId: e.target.value }))}
+                  >
+                    <option value="">Select...</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name.split(' - ')[0]}</option>
+                    ))}
+                  </select>
+                  {transferForm.fromBranchId && transferForm.productId && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Available: <span className="font-semibold text-neutral-700">
+                        {branchStockMap[transferForm.fromBranchId]?.[transferForm.productId] ?? 0}kg
+                      </span>
+                    </p>
+                  )}
+                </div>
+                <ArrowRight className="w-5 h-5 text-neutral-400 mb-2" />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">To Branch</label>
+                  <select
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    value={transferForm.toBranchId}
+                    onChange={(e) => setTransferForm((f) => ({ ...f, toBranchId: e.target.value }))}
+                  >
+                    <option value="">Select...</option>
+                    {branches.filter((b) => b.id !== transferForm.fromBranchId).map((b) => (
+                      <option key={b.id} value={b.id}>{b.name.split(' - ')[0]}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Quantity (kg)</label>
+                <Input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  placeholder="e.g. 10"
+                  value={transferForm.quantity}
+                  onChange={(e) => setTransferForm((f) => ({ ...f, quantity: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Notes (optional)</label>
+                <Input
+                  placeholder="e.g. Restocking low branch, event supply"
+                  value={transferForm.notes}
+                  onChange={(e) => setTransferForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setTransferModal(false)}
+                className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTransfer}
+                disabled={transferring}
+                className="flex-1 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 disabled:opacity-50"
+              >
+                {transferring ? 'Transferring...' : 'Confirm Transfer'}
+              </button>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* Low Stock Alert */}

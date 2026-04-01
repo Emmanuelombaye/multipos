@@ -427,7 +427,7 @@ class APIClient {
   }
 
   async getStockHistoryByDate(branchId: string, date: string): Promise<any[]> {
-    return this.cachedGet(`/inventory/history/${branchId}/${date}`, 0); // No cache for real-time data
+    return this.cachedGet(`/inventory/history/${branchId}/${date}`, 0);
   }
 
   async getLowStockProducts(branchId: string): Promise<any[]> {
@@ -436,6 +436,44 @@ class APIClient {
 
   async getCurrentStock(branchId: string): Promise<any[]> {
     return this.cachedGet(`/inventory/current/${branchId}`, 5000);
+  }
+
+  async createExternalDispatch(payload: {
+    branchId: string; productId: string; clientName: string; clientType: string;
+    quantity: number; pricePerKg: number; paymentStatus: string; paymentMethod?: string;
+    notes?: string; dispatchDate: string;
+  }): Promise<any> {
+    const response = await this.axios.post('/inventory/dispatch', payload);
+    this.cache.clear();
+    return response.data;
+  }
+
+  async getExternalDispatches(branchId: string | 'all', limit = 50, offset = 0): Promise<any> {
+    return this.cachedGet(`/inventory/dispatches/${branchId}?limit=${limit}&offset=${offset}`, 5000);
+  }
+
+  async updateDispatchPayment(dispatchId: string, paymentStatus: string, paymentMethod?: string): Promise<any> {
+    const response = await this.axios.patch(`/inventory/dispatch/${dispatchId}/payment`, { paymentStatus, paymentMethod });
+    this.cache.clear();
+    return response.data;
+  }
+
+  async transferStock(fromBranchId: string, toBranchId: string, productId: string, quantity: number, notes?: string): Promise<any> {
+    const response = await this.axios.post('/inventory/transfer', {
+      fromBranchId,
+      toBranchId,
+      productId,
+      quantity,
+      notes,
+    });
+    this.cache.clear();
+    return response.data;
+  }
+
+  async getStockTransfers(branchId?: string, limit = 50, offset = 0): Promise<any> {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (branchId) params.set('branchId', branchId);
+    return this.cachedGet(`/inventory/transfers?${params}`, 5000);
   }
 
   async updateBranchStock(branchId: string, productId: string, currentStock: number): Promise<any> {

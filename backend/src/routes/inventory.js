@@ -44,7 +44,8 @@ router.put('/entry/closing', authorize(['cashier', 'manager', 'admin']), async (
       productId,
       branchId,
       closingStock,
-      date
+      date,
+      req.user?.name || req.user?.email || 'Cashier'
     );
 
     // Invalidate caches after closing stock update
@@ -99,6 +100,115 @@ router.get('/current/:branchId', async (req, res, next) => {
   try {
     const stock = await inventoryService.getCurrentStockByBranch(req.params.branchId);
     res.json(stock);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Transfer stock between branches (admin/manager only)
+router.post('/transfer', authorize(['admin', 'manager']), async (req, res, next) => {
+  try {
+    const { fromBranchId, toBranchId, productId, quantity, notes } = req.body;
+
+    if (!fromBranchId || !toBranchId || !productId || !quantity) {
+      res.status(400).json({ error: 'fromBranchId, toBranchId, productId, and quantity are required' });
+      return;
+    }
+    if (fromBranchId === toBranchId) {
+      res.status(400).json({ error: 'Source and destination branches must be different' });
+      return;
+    }
+    if (parseFloat(quantity) <= 0) {
+      res.status(400).json({ error: 'Quantity must be greater than 0' });
+      return;
+    }
+
+    const transferredBy = req.user?.name || req.user?.email || 'Admin';
+    const result = await inventoryService.transferStock(fromBranchId, toBranchId, productId, quantity, transferredBy, notes);
+
+    clearCache(`/inventory/current/${fromBranchId}`);
+    clearCache(`/inventory/current/${toBranchId}`);
+    clearCache(`/inventory/history/${fromBranchId}`);
+    clearCache(`/inventory/history/${toBranchId}`);
+    clearCache(`/inventory/transfers`);
+    clearCache(`/dashboard/admin`);
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get internal transfer audit log
+router.get('/transfers', async (req, res, next) => {
+  try {
+    const { branchId, limit = 50, offset = 0 } = req.query;
+    const result = await inventoryService.getStockTransfers(
+      branchId || null,
+      parseInt(limit),
+      parseInt(offset)
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// External dispatch (to hotels, schools, villas, etc.)
+router.post('/dispatch', authorize(['admin', 'manager']), async (req, res, next) => {
+  try {
+    const { branchId, productId, clientName, clientType, quantity, pricePerKg, paymentStatus, paymentMethod, notes, dispatchDate } = req.body;
+
+    if (!branchId || !productId || !clientName || !clientType || !quantity || !pricePerKg || !dispatchDate) {
+      res.status(400).json({ error: 'branchId, productId, clientName, clientType, quantity, pricePerKg, and dispatchDate are required' });
+      return;
+    }
+
+    const dispatchedBy = req.user?.name || req.user?.email || 'Admin';
+    const result = await inventoryService.createExternalDispatch({
+      branchId, productId, clientName, clientType,
+      quantity: parseFloat(quantity),
+      pricePerKg: parseFloat(pricePerKg),
+      paymentStatus, paymentMethod, notes, dispatchedBy, dispatchDate
+    });
+
+    clearCache(`/inventory/current/${branchId}`);
+    clearCache(`/inventory/history/${branchId}`);
+    clearCache(`/inventory/dispatches/${branchId}`);
+    clearCache(`/dashboard/admin`);
+    clearCache(`/dashboard/branch/${branchId}`);
+
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get dispatches for a branch (or all if no branchId)
+router.get('/dispatches/:branchId', async (req, res, next) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    const result = await inventoryService.getExternalDispatches(
+      req.params.branchId === 'all' ? null : req.params.branchId,
+      parseInt(limit),
+      parseInt(offset)
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update dispatch payment status
+router.patch('/dispatch/:id/payment', authorize(['admin', 'manager']), async (req, res, next) => {
+  try {
+    const { paymentStatus, paymentMethod } = req.body;
+    if (!paymentStatus) {
+      res.status(400).json({ error: 'paymentStatus is required' });
+      return;
+    }
+    const result = await inventoryService.updateDispatchPayment(req.params.id, paymentStatus, paymentMethod);
+    res.json(result);
   } catch (error) {
     next(error);
   }

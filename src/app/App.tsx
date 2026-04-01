@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   LogOut,
   Menu,
-  X
+  X,
+  PackageCheck
 } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -21,6 +22,7 @@ import { ReportsScreen } from './components/ReportsScreen';
 import { BranchDashboard } from './components/BranchDashboard';
 import { AdminFinancials } from './components/AdminFinancials';
 import { ProductManagement } from './components/ProductManagement';
+import { ClosingStockScreen } from './components/ClosingStockScreen';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
 import { apiClient } from './api/client';
@@ -33,7 +35,8 @@ type Screen =
   | 'inventory'
   | 'products'
   | 'reports'
-  | 'financials';
+  | 'financials'
+  | 'closing';
 
 export default function App() {
   const { user, isLoggedIn, logout } = useAuth();
@@ -175,11 +178,13 @@ export default function App() {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'pos', label: 'POS', icon: ShoppingCart },
         { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'closing', label: 'Close Stock', icon: PackageCheck },
         { id: 'reports', label: 'Reports', icon: FileText },
       ];
     } else {
       return [
         { id: 'pos', label: 'POS', icon: ShoppingCart },
+        { id: 'closing', label: 'Close Stock', icon: PackageCheck },
       ];
     }
   };
@@ -202,6 +207,8 @@ export default function App() {
         return <BranchManagement />;
       case 'products':
         return <ProductManagement />;
+      case 'closing':
+        return <ClosingStockScreen branchId={selectedBranch} branchName={branchName} />;
       case 'inventory':
         return <InventoryScreen branchId={userRole === 'admin' ? undefined : selectedBranch} />;
       case 'reports':

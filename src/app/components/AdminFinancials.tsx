@@ -9,7 +9,8 @@ import {
   Receipt,
   PackageSearch,
   Download,
-  Filter
+  Filter,
+  Handshake
 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -169,7 +170,9 @@ export function AdminFinancials() {
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
   const mpesaSales = filteredTransactions.filter(t => t.payment_method === 'mpesa').reduce((sum, t) => sum + (t.total || 0), 0);
   const cashSales = filteredTransactions.filter(t => t.payment_method === 'cash').reduce((sum, t) => sum + (t.total || 0), 0);
-  const totalSales = mpesaSales + cashSales;
+  const loanSales = filteredTransactions.filter(t => t.payment_method === 'loan').reduce((sum, t) => sum + (t.total || 0), 0);
+  const cardSales = filteredTransactions.filter(t => t.payment_method === 'card').reduce((sum, t) => sum + (t.total || 0), 0);
+  const totalSales = mpesaSales + cashSales + loanSales + cardSales;
   const expectedRevenue = filteredStock.reduce((sum, sh) => {
     const product = productsById[sh.product_id];
     const openingStock = sh.opening_stock || 0;
@@ -187,6 +190,7 @@ export function AdminFinancials() {
         { label: 'Total Sales', value: `KES ${totalSales.toLocaleString()}` },
         { label: 'M-Pesa Sales', value: `KES ${mpesaSales.toLocaleString()}` },
         { label: 'Cash Sales', value: `KES ${cashSales.toLocaleString()}` },
+        { label: 'Loan Sales', value: `KES ${loanSales.toLocaleString()}` },
         { label: 'Total Expenses', value: `KES ${totalExpenses.toLocaleString()}` },
       ];
 
@@ -318,6 +322,13 @@ export function AdminFinancials() {
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-orange-600" />
             <p className="text-2xl font-bold text-neutral-900">KES {cashSales.toLocaleString()}</p>
+          </div>
+        </Card>
+        <Card className="p-5 border-l-4 border-l-amber-600">
+          <p className="text-xs font-bold text-neutral-500 uppercase mb-1">Loan Sales</p>
+          <div className="flex items-center gap-2">
+            <Handshake className="w-4 h-4 text-amber-600" />
+            <p className="text-2xl font-bold text-neutral-900">KES {loanSales.toLocaleString()}</p>
           </div>
         </Card>
         <Card className="p-5 border-l-4 border-l-red-600">
