@@ -121,6 +121,11 @@ export function StockAuditScreen({ branchId }: StockAuditScreenProps) {
             ...Object.keys(dispatchedMap),
           ]);
 
+          // If no activity at all, show at least products with current stock
+          if (activeProductIds.size === 0 && currentStock.length > 0) {
+            currentStock.forEach(cs => activeProductIds.add(cs.product_id));
+          }
+
           activeProductIds.forEach(productId => {
             const product = productMap[productId];
             if (!product) return;
