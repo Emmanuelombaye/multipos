@@ -350,7 +350,32 @@ export default function App() {
         {renderScreen()}
       </main>
 
-      {/* Mobile Bottom Navigation removed to prioritize Product-First POS Layout and avoid overlap with Floating Cart */}
+      {/* Mobile Bottom Navigation — cashier & manager only */}
+      {(userRole === 'cashier' || userRole === 'manager') && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 shadow-lg z-40">
+          <div className="flex">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const active = currentScreen === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentScreen(item.id as Screen)}
+                  className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors ${
+                    active ? 'text-red-700' : 'text-neutral-400'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${active ? 'text-red-700' : 'text-neutral-400'}`} />
+                  <span className={`text-[10px] font-medium ${active ? 'text-red-700' : 'text-neutral-400'}`}>
+                    {item.label}
+                  </span>
+                  {active && <div className="absolute bottom-0 w-8 h-0.5 bg-red-700 rounded-full" />}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

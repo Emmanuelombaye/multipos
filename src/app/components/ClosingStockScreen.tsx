@@ -17,9 +17,9 @@ interface StockEntry {
   product_name: string;
   product_image: string;
   opening_stock: number;
-  current_stock: number;   // live branch_stock (system-calculated)
-  closing_stock: number | null; // already submitted today
-  input: string;           // what the cashier is typing
+  current_stock: number;
+  closing_stock: number | null;
+  input: string;
   submitted: boolean;
 }
 
@@ -35,9 +35,7 @@ export function ClosingStockScreen({ branchId, branchName }: ClosingStockScreenP
 
   const today = getKenyaDate();
 
-  useEffect(() => {
-    loadData();
-  }, [branchId]);
+  useEffect(() => { loadData(); }, [branchId]);
 
   const loadData = async () => {
     setLoading(true);
@@ -74,7 +72,7 @@ export function ClosingStockScreen({ branchId, branchName }: ClosingStockScreenP
       });
 
       setEntries(built);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load stock data');
     } finally {
       setLoading(false);
@@ -110,26 +108,21 @@ export function ClosingStockScreen({ branchId, branchName }: ClosingStockScreenP
       return;
     }
     setSavingAll(true);
-    let successCount = 0;
-    let failCount = 0;
+    let ok = 0, fail = 0;
     for (const entry of pending) {
       const val = parseFloat(entry.input);
-      if (isNaN(val) || val < 0) { failCount++; continue; }
+      if (isNaN(val) || val < 0) { fail++; continue; }
       try {
         await apiClient.recordClosingStock(entry.product_id, branchId, val, today);
-        successCount++;
+        ok++;
         setEntries(prev => prev.map(e =>
-          e.product_id === entry.product_id
-            ? { ...e, closing_stock: val, submitted: true }
-            : e
+          e.product_id === entry.product_id ? { ...e, closing_stock: val, submitted: true } : e
         ));
-      } catch {
-        failCount++;
-      }
+      } catch { fail++; }
     }
     setSavingAll(false);
-    if (successCount > 0) toast.success(`${successCount} products saved successfully`);
-    if (failCount > 0) toast.error(`${failCount} products failed to save`);
+    if (ok > 0) toast.success(`${ok} products saved`);
+    if (fail > 0) toast.error(`${fail} failed to save`);
   };
 
   const submittedCount = entries.filter(e => e.submitted).length;
@@ -140,8 +133,7 @@ export function ClosingStockScreen({ branchId, branchName }: ClosingStockScreenP
     entries.reduce((sum, e) => {
       if (e.closing_stock === null) return sum;
       return sum + (e.opening_stock - e.closing_stock);
-    }, 0),
-    [entries]
+    }, 0), [entries]
   );
 
   if (loading) {
@@ -153,206 +145,186 @@ export function ClosingStockScreen({ branchId, branchName }: ClosingStockScreenP
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 overflow-y-auto max-h-screen">
+    <div className="space-y-4 p-3 md:p-6 pb-24">
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">End-of-Day Stock Count</h1>
-          <p className="text-neutral-600 text-sm mt-1">
-            {branchName} — <span className="font-medium">{today}</span>
-          </p>
+          <h1 className="text-xl font-bold text-neutral-900">End-of-Day Count</h1>
+          <p className="text-sm text-neutral-500">{branchName} · {today}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={loadData}
-            className="p-2 rounded-lg border border-neutral-200 hover:bg-neutral-50"
-            title="Refresh"
+            className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 active:scale-95"
           >
             <RefreshCw className="w-4 h-4 text-neutral-500" />
           </button>
           <Button
             onClick={submitAll}
             disabled={savingAll}
-            className="bg-red-700 hover:bg-red-800"
+            className="bg-red-700 hover:bg-red-800 h-9 px-4 text-sm"
           >
-            <Save className="w-4 h-4 mr-2" />
+            <Save className="w-4 h-4 mr-1.5" />
             {savingAll ? 'Saving...' : 'Save All'}
           </Button>
         </div>
       </div>
 
-      {/* Status bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="p-3 bg-blue-50 border-blue-200">
-          <p className="text-xs text-blue-600 font-medium uppercase">Total Products</p>
-          <p className="text-2xl font-bold text-blue-900">{entries.length}</p>
-        </Card>
-        <Card className="p-3 bg-green-50 border-green-200">
-          <p className="text-xs text-green-600 font-medium uppercase">Submitted</p>
-          <p className="text-2xl font-bold text-green-900">{submittedCount}</p>
-        </Card>
-        <Card className="p-3 bg-amber-50 border-amber-200">
-          <p className="text-xs text-amber-600 font-medium uppercase">Pending</p>
-          <p className="text-2xl font-bold text-amber-900">{pendingCount}</p>
-        </Card>
-        <Card className={`p-3 ${totalVariance > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-          <p className={`text-xs font-medium uppercase ${totalVariance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-            Total Variance
+      {/* Status pills */}
+      <div className="grid grid-cols-4 gap-2">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5 text-center">
+          <p className="text-xs text-blue-600 font-medium">Total</p>
+          <p className="text-xl font-bold text-blue-900">{entries.length}</p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-xl p-2.5 text-center">
+          <p className="text-xs text-green-600 font-medium">Done</p>
+          <p className="text-xl font-bold text-green-900">{submittedCount}</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-center">
+          <p className="text-xs text-amber-600 font-medium">Left</p>
+          <p className="text-xl font-bold text-amber-900">{pendingCount}</p>
+        </div>
+        <div className={`rounded-xl p-2.5 text-center border ${totalVariance > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+          <p className={`text-xs font-medium ${totalVariance > 0 ? 'text-red-600' : 'text-green-600'}`}>Var</p>
+          <p className={`text-xl font-bold ${totalVariance > 0 ? 'text-red-900' : 'text-green-900'}`}>
+            {totalVariance.toFixed(1)}
           </p>
-          <p className={`text-2xl font-bold ${totalVariance > 0 ? 'text-red-900' : 'text-green-900'}`}>
-            {totalVariance.toFixed(1)}kg
-          </p>
-        </Card>
+        </div>
       </div>
 
+      {/* All done banner */}
       {allDone && (
-        <Card className="p-4 bg-green-50 border-green-200 flex items-center gap-3">
+        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
           <CheckCircle className="w-5 h-5 text-green-700 shrink-0" />
           <div>
-            <p className="font-semibold text-green-900">All products submitted for today</p>
-            <p className="text-sm text-green-700">
-              Total variance: {totalVariance.toFixed(1)}kg
-              {totalVariance === 0 ? ' — Perfect, no shrinkage!' : totalVariance > 0 ? ' — Shrinkage detected' : ' — Stock gain detected'}
+            <p className="font-semibold text-green-900 text-sm">All products submitted ✓</p>
+            <p className="text-xs text-green-700">
+              Variance: {totalVariance.toFixed(1)}kg
+              {totalVariance === 0 ? ' — No shrinkage' : totalVariance > 0 ? ' — Shrinkage detected' : ' — Stock gain'}
             </p>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Stock entry table */}
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b bg-neutral-50 flex items-center justify-between">
-          <h3 className="font-bold text-neutral-900">Physical Stock Count</h3>
-          <Badge className="bg-neutral-700">{today}</Badge>
+      {/* Product cards — mobile-first, no table */}
+      <div className="space-y-3">
+        {entries.map((entry) => {
+          const inputVal = parseFloat(entry.input);
+          const variance = !isNaN(inputVal) && entry.input !== ''
+            ? entry.opening_stock - inputVal
+            : entry.closing_stock !== null
+              ? entry.opening_stock - entry.closing_stock
+              : null;
+
+          return (
+            <Card
+              key={entry.product_id}
+              className={`p-4 transition-all ${entry.submitted ? 'border-green-300 bg-green-50/40' : 'border-neutral-200'}`}
+            >
+              {/* Product name + status */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-2xl shrink-0">{entry.product_image}</span>
+                  <span className="font-semibold text-neutral-900 text-sm truncate">{entry.product_name}</span>
+                </div>
+                {entry.submitted ? (
+                  <div className="flex items-center gap-1 text-green-700 shrink-0">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-xs font-medium">Saved</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-amber-600 shrink-0">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs font-medium">Pending</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Stock info row */}
+              <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                <div className="bg-blue-50 rounded-lg p-2">
+                  <p className="text-xs text-blue-600 font-medium">Opening</p>
+                  <p className="text-sm font-bold text-blue-900">{entry.opening_stock}kg</p>
+                </div>
+                <div className="bg-neutral-50 rounded-lg p-2">
+                  <p className="text-xs text-neutral-500 font-medium">System</p>
+                  <p className="text-sm font-bold text-neutral-700">{entry.current_stock}kg</p>
+                </div>
+                <div className={`rounded-lg p-2 ${
+                  variance === null ? 'bg-neutral-50' :
+                  variance === 0 ? 'bg-green-50' :
+                  variance > 0 ? 'bg-red-50' : 'bg-blue-50'
+                }`}>
+                  <p className="text-xs text-neutral-500 font-medium">Variance</p>
+                  <p className={`text-sm font-bold ${
+                    variance === null ? 'text-neutral-400' :
+                    variance === 0 ? 'text-green-700' :
+                    variance > 0 ? 'text-red-700' : 'text-blue-700'
+                  }`}>
+                    {variance === null ? '—' :
+                     variance === 0 ? '0kg' :
+                     `${variance > 0 ? '-' : '+'}${Math.abs(variance).toFixed(1)}kg`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Input + Save button */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.1"
+                    placeholder="Physical count..."
+                    value={entry.input}
+                    onChange={(e) => setEntries(prev => prev.map(en =>
+                      en.product_id === entry.product_id
+                        ? { ...en, input: e.target.value, submitted: false }
+                        : en
+                    ))}
+                    className={`h-12 text-base text-center pr-10 ${
+                      entry.submitted ? 'border-green-400 bg-green-50' : ''
+                    }`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400 pointer-events-none">kg</span>
+                </div>
+                <button
+                  onClick={() => submitOne(entry)}
+                  disabled={saving[entry.product_id] || entry.input === ''}
+                  className={`h-12 px-5 rounded-lg text-sm font-semibold transition-all active:scale-95 shrink-0 ${
+                    entry.submitted
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-red-700 hover:bg-red-800 text-white'
+                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  {saving[entry.product_id] ? '...' : entry.submitted ? 'Update' : 'Save'}
+                </button>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {entries.length === 0 && (
+        <div className="text-center py-16 text-neutral-400">
+          <PackageCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>No products assigned to this branch</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-100 border-b border-neutral-200">
-              <tr>
-                <th className="text-left py-3 px-4 font-semibold text-neutral-700 text-sm">Product</th>
-                <th className="text-center py-3 px-4 font-semibold text-neutral-700 text-sm">Opening</th>
-                <th className="text-center py-3 px-4 font-semibold text-neutral-700 text-sm">System Stock</th>
-                <th className="text-center py-3 px-4 font-semibold text-neutral-700 text-sm w-36">Physical Count</th>
-                <th className="text-center py-3 px-4 font-semibold text-neutral-700 text-sm">Variance</th>
-                <th className="text-center py-3 px-4 font-semibold text-neutral-700 text-sm">Status</th>
-                <th className="py-3 px-4 text-sm"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {entries.map((entry) => {
-                const inputVal = parseFloat(entry.input);
-                const variance = !isNaN(inputVal) && entry.input !== ''
-                  ? entry.opening_stock - inputVal
-                  : entry.closing_stock !== null
-                    ? entry.opening_stock - entry.closing_stock
-                    : null;
-                const systemDiff = !isNaN(inputVal) && entry.input !== ''
-                  ? inputVal - entry.current_stock
-                  : null;
+      )}
 
-                return (
-                  <tr key={entry.product_id} className={`hover:bg-neutral-50 ${entry.submitted ? 'bg-green-50/30' : ''}`}>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{entry.product_image}</span>
-                        <span className="font-medium text-sm text-neutral-900">{entry.product_name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center font-semibold text-blue-700 text-sm">
-                      {entry.opening_stock}kg
-                    </td>
-                    <td className="py-3 px-4 text-center text-sm">
-                      <span className="font-semibold text-neutral-700">{entry.current_stock}kg</span>
-                      {systemDiff !== null && systemDiff !== 0 && (
-                        <p className={`text-xs mt-0.5 ${systemDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {systemDiff > 0 ? '+' : ''}{systemDiff.toFixed(1)}kg vs system
-                        </p>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          placeholder="0.0"
-                          value={entry.input}
-                          onChange={(e) => setEntries(prev => prev.map(en =>
-                            en.product_id === entry.product_id
-                              ? { ...en, input: e.target.value, submitted: false }
-                              : en
-                          ))}
-                          className={`w-24 text-center text-sm h-8 ${entry.submitted ? 'border-green-400 bg-green-50' : ''}`}
-                        />
-                        <span className="text-xs text-neutral-500">kg</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {variance !== null ? (
-                        <Badge
-                          variant="outline"
-                          className={
-                            variance === 0
-                              ? 'text-green-700 border-green-300 bg-green-50'
-                              : variance > 0
-                                ? 'text-red-700 border-red-300 bg-red-50'
-                                : 'text-blue-700 border-blue-300 bg-blue-50'
-                          }
-                        >
-                          {variance > 0 ? '-' : variance < 0 ? '+' : ''}{Math.abs(variance).toFixed(1)}kg
-                        </Badge>
-                      ) : (
-                        <span className="text-neutral-300 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {entry.submitted ? (
-                        <div className="flex items-center justify-center gap-1 text-green-700">
-                          <CheckCircle className="w-4 h-4" />
-                          <span className="text-xs font-medium">Done</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-1 text-amber-600">
-                          <Clock className="w-4 h-4" />
-                          <span className="text-xs font-medium">Pending</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => submitOne(entry)}
-                        disabled={saving[entry.product_id] || entry.input === ''}
-                        className="px-3 py-1.5 bg-red-700 text-white rounded-lg text-xs font-medium hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {saving[entry.product_id] ? '...' : 'Save'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {entries.length === 0 && (
-          <div className="p-12 text-center text-neutral-400">
-            <PackageCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>No products assigned to this branch</p>
-          </div>
-        )}
-      </Card>
-
-      {/* Variance alert */}
+      {/* High variance warning */}
       {submittedCount > 0 && totalVariance > 2 && (
-        <Card className="p-4 border-red-200 bg-red-50 flex items-start gap-3">
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
           <AlertTriangle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-red-900">High Variance Detected</p>
-            <p className="text-sm text-red-700">
-              Total variance of {totalVariance.toFixed(1)}kg is above normal. This may indicate
-              measurement errors, theft, or unrecorded transfers. Please review before closing.
+            <p className="font-semibold text-red-900 text-sm">High Variance: {totalVariance.toFixed(1)}kg</p>
+            <p className="text-xs text-red-700 mt-0.5">
+              May indicate measurement errors, theft, or unrecorded transfers. Review before closing.
             </p>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );
