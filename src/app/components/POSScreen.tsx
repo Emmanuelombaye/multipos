@@ -365,7 +365,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                       <div className="space-y-2">
                         <Label>Category</Label>
                         <Select value={expenseCategory} onValueChange={setExpenseCategory}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11 text-base">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
