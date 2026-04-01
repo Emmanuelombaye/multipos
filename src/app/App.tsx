@@ -11,7 +11,8 @@ import {
   LogOut,
   Menu,
   X,
-  PackageCheck
+  PackageCheck,
+  ArrowRightLeft
 } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -23,6 +24,7 @@ import { BranchDashboard } from './components/BranchDashboard';
 import { AdminFinancials } from './components/AdminFinancials';
 import { ProductManagement } from './components/ProductManagement';
 import { ClosingStockScreen } from './components/ClosingStockScreen';
+import { StockMovementsScreen } from './components/StockMovementsScreen';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
 import { apiClient } from './api/client';
@@ -36,7 +38,8 @@ type Screen =
   | 'products'
   | 'reports'
   | 'financials'
-  | 'closing';
+  | 'closing'
+  | 'movements';
 
 export default function App() {
   const { user, isLoggedIn, logout } = useAuth();
@@ -184,7 +187,7 @@ export default function App() {
     } else {
       return [
         { id: 'pos', label: 'POS', icon: ShoppingCart },
-        { id: 'inventory', label: 'Transfers', icon: Package },
+        { id: 'movements', label: 'Movements', icon: ArrowRightLeft },
         { id: 'closing', label: 'Close Stock', icon: PackageCheck },
       ];
     }
@@ -208,6 +211,8 @@ export default function App() {
         return <BranchManagement />;
       case 'products':
         return <ProductManagement />;
+      case 'movements':
+        return <StockMovementsScreen branchId={selectedBranch} branchName={branchName} />;
       case 'closing':
         return <ClosingStockScreen branchId={selectedBranch} branchName={branchName} />;
       case 'inventory':
