@@ -60,7 +60,9 @@ export const getBranchWithStats = async (branchId) => {
     .eq('branch_id', branchId);
 
   // Get today's sales (DB is now in EAT)
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
 
   const { data: todayTransactions } = await supabase
     .from('transactions')

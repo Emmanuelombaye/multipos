@@ -50,7 +50,9 @@ export const getExpensesByDateRange = async (branchId, startDate, endDate) => {
 };
 
 export const getTotalExpensesByDay = async (branchId, dateStr) => {
-  const date = dateStr || new Date().toISOString().split('T')[0];
+  const date = dateStr || new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
 
   const { data, error } = await supabase
     .from('expenses')
