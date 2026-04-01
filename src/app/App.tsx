@@ -171,7 +171,7 @@ export default function App() {
         { id: 'products', label: 'Products', icon: Package },
         { id: 'inventory', label: 'Inventory', icon: Package },
         { id: 'reports', label: 'Analytics', icon: FileText },
-        { id: 'pos', label: 'POS Demo', icon: ShoppingCart },
+
       ];
     } else if (userRole === 'manager') {
       return [
