@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   PackageCheck,
-  ArrowRightLeft
+  ArrowRightLeft,
+  ClipboardList
 } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -25,6 +26,7 @@ import { AdminFinancials } from './components/AdminFinancials';
 import { ProductManagement } from './components/ProductManagement';
 import { ClosingStockScreen } from './components/ClosingStockScreen';
 import { StockMovementsScreen } from './components/StockMovementsScreen';
+import { StockAuditScreen } from './components/StockAuditScreen';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
 import { apiClient } from './api/client';
@@ -39,7 +41,8 @@ type Screen =
   | 'reports'
   | 'financials'
   | 'closing'
-  | 'movements';
+  | 'movements'
+  | 'audit';
 
 export default function App() {
   const { user, isLoggedIn, logout } = useAuth();
@@ -173,14 +176,16 @@ export default function App() {
         { id: 'branches', label: 'Branches', icon: Store },
         { id: 'products', label: 'Products', icon: Package },
         { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'movements', label: 'Movements', icon: ArrowRightLeft },
+        { id: 'audit', label: 'Stock Audit', icon: ClipboardList },
         { id: 'reports', label: 'Analytics', icon: FileText },
-
       ];
     } else if (userRole === 'manager') {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'pos', label: 'POS', icon: ShoppingCart },
         { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'movements', label: 'Movements', icon: ArrowRightLeft },
         { id: 'closing', label: 'Close Stock', icon: PackageCheck },
         { id: 'reports', label: 'Reports', icon: FileText },
       ];
@@ -211,8 +216,14 @@ export default function App() {
         return <BranchManagement />;
       case 'products':
         return <ProductManagement />;
+      case 'audit':
+        return <StockAuditScreen />;
       case 'movements':
-        return <StockMovementsScreen branchId={selectedBranch} branchName={branchName} />;
+        return <StockMovementsScreen 
+          branchId={userRole === 'admin' ? '' : selectedBranch} 
+          branchName={userRole === 'admin' ? 'All Branches' : branchName}
+          isAdmin={userRole === 'admin'}
+        />;
       case 'closing':
         return <ClosingStockScreen branchId={selectedBranch} branchName={branchName} />;
       case 'inventory':

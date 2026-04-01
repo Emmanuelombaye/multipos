@@ -105,8 +105,71 @@ router.get('/current/:branchId', async (req, res, next) => {
   }
 });
 
-// Transfer stock between branches (admin/manager only)
-router.post('/transfer', authorize(['admin', 'manager']), async (req, res, next) => {
+// Send a stock transfer request (all roles — cashier can send)
+router.post('/transfer-request', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const { fromBranchId, toBranchId, productId, quantity, notes } = req.body;
+    if (!fromBranchId || !toBranchId || !productId || !quantity) {
+      return res.status(400).json({ error: 'fromBranchId, toBranchId, productId, quantity are required' });
+    }
+    if (fromBranchId === toBranchId) {
+      return res.status(400).json({ error: 'Source and destination branches must be different' });
+    }
+    const sentBy = req.user?.name || req.user?.email || 'Cashier';
+    const result = await inventoryService.sendStockTransferRequest(fromBranchId, toBranchId, productId, parseFloat(quantity), sentBy, notes);
+    clearCache(`/inventory/current/${fromBranchId}`);
+    clearCache(`/inventory/transfer-requests/${fromBranchId}`);
+    clearCache(`/inventory/transfer-requests/${toBranchId}`);
+    res.status(201).json(result);
+  } catch (error) { next(error); }
+});
+
+// Accept incoming transfer request
+router.post('/transfer-request/:id/accept', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const receivedBy = req.user?.name || req.user?.email || 'Cashier';
+    const result = await inventoryService.acceptStockTransferRequest(req.params.id, receivedBy);
+    clearCache(`/inventory/current/${result.from_branch_id}`);
+    clearCache(`/inventory/current/${result.to_branch_id}`);
+    clearCache(`/inventory/transfer-requests/${result.from_branch_id}`);
+    clearCache(`/inventory/transfer-requests/${result.to_branch_id}`);
+    clearCache(`/dashboard/admin`);
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
+// Reject incoming transfer request
+router.post('/transfer-request/:id/reject', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const rejectedBy = req.user?.name || req.user?.email || 'Cashier';
+    const result = await inventoryService.rejectStockTransferRequest(req.params.id, rejectedBy);
+    clearCache(`/inventory/current/${result.from_branch_id}`);
+    clearCache(`/inventory/transfer-requests/${result.from_branch_id}`);
+    clearCache(`/inventory/transfer-requests/${result.to_branch_id}`);
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
+// Get all transfer requests for a branch (incoming + outgoing)
+router.get('/transfer-requests/:branchId', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    const branchId = req.params.branchId === 'all' ? null : req.params.branchId;
+    const result = await inventoryService.getTransferRequests(branchId, status || null);
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
+// Get pending incoming transfers for a branch (for notification badge)
+router.get('/transfer-requests/:branchId/pending', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const result = await inventoryService.getPendingIncoming(req.params.branchId);
+    res.json(result);
+  } catch (error) { next(error); }
+});
+
+// Transfer stock between branches (admin/manager/cashier)
+router.post('/transfer', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
   try {
     const { fromBranchId, toBranchId, productId, quantity, notes } = req.body;
 
@@ -154,8 +217,8 @@ router.get('/transfers', async (req, res, next) => {
   }
 });
 
-// External dispatch (to hotels, schools, villas, etc.)
-router.post('/dispatch', authorize(['admin', 'manager']), async (req, res, next) => {
+// External dispatch (to hotels, schools, villas, etc.) — all roles
+router.post('/dispatch', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
   try {
     const { branchId, productId, clientName, clientType, quantity, pricePerKg, paymentStatus, paymentMethod, notes, dispatchDate } = req.body;
 
@@ -212,6 +275,40 @@ router.patch('/dispatch/:id/payment', authorize(['admin', 'manager']), async (re
   } catch (error) {
     next(error);
   }
+});
+
+// Add stock mid-shift with full audit (cashier, manager, admin)
+router.post('/add-stock', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const { branchId, productId, quantity, reason } = req.body;
+    if (!branchId || !productId || !quantity) {
+      return res.status(400).json({ error: 'branchId, productId, quantity are required' });
+    }
+    if (parseFloat(quantity) <= 0) {
+      return res.status(400).json({ error: 'Quantity must be greater than 0' });
+    }
+    const addedBy = req.user?.name || req.user?.email || 'Staff';
+    const addedByRole = req.user?.role || 'cashier';
+    const result = await inventoryService.addStockWithAudit(
+      branchId, productId, parseFloat(quantity), addedBy, addedByRole, reason
+    );
+    clearCache(`/inventory/current/${branchId}`);
+    clearCache(`/inventory/additions/${branchId}`);
+    clearCache(`/inventory/additions/all`);
+    clearCache(`/dashboard/admin`);
+    clearCache(`/dashboard/branch/${branchId}`);
+    res.status(201).json(result);
+  } catch (error) { next(error); }
+});
+
+// Get stock additions audit log
+router.get('/additions/:branchId', authorize(['admin', 'manager', 'cashier']), async (req, res, next) => {
+  try {
+    const { limit = 100, offset = 0 } = req.query;
+    const branchId = req.params.branchId === 'all' ? null : req.params.branchId;
+    const result = await inventoryService.getStockAdditions(branchId, parseInt(limit), parseInt(offset));
+    res.json(result);
+  } catch (error) { next(error); }
 });
 
 // Update branch stock (admin only)

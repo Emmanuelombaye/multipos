@@ -333,6 +333,16 @@ class APIClient {
     return response.data;
   }
 
+  async addStockMidShift(branchId: string, productId: string, quantity: number, reason?: string): Promise<any> {
+    const response = await this.axios.post('/inventory/add-stock', { branchId, productId, quantity, reason });
+    this.cache.clear();
+    return response.data;
+  }
+
+  async getStockAdditions(branchId: string | 'all', limit = 100, offset = 0): Promise<any> {
+    return this.cachedGet(`/inventory/additions/${branchId}?limit=${limit}&offset=${offset}`, 0);
+  }
+
   async addStock(branchId: string, productId: string, amount: number): Promise<any> {
     const response = await this.axios.post(`/products/branch/${branchId}/${productId}/stock`, {
       amount,
@@ -456,6 +466,35 @@ class APIClient {
     const response = await this.axios.patch(`/inventory/dispatch/${dispatchId}/payment`, { paymentStatus, paymentMethod });
     this.cache.clear();
     return response.data;
+  }
+
+  async sendTransferRequest(fromBranchId: string, toBranchId: string, productId: string, quantity: number, notes?: string): Promise<any> {
+    const response = await this.axios.post('/inventory/transfer-request', { fromBranchId, toBranchId, productId, quantity, notes });
+    this.cache.clear();
+    return response.data;
+  }
+
+  async acceptTransferRequest(requestId: string): Promise<any> {
+    const response = await this.axios.post(`/inventory/transfer-request/${requestId}/accept`);
+    this.cache.clear();
+    return response.data;
+  }
+
+  async rejectTransferRequest(requestId: string): Promise<any> {
+    const response = await this.axios.post(`/inventory/transfer-request/${requestId}/reject`);
+    this.cache.clear();
+    return response.data;
+  }
+
+  async getTransferRequests(branchId: string | 'all', status?: string): Promise<any[]> {
+    const url = branchId === 'all' 
+      ? `/inventory/transfer-requests/all${status ? `?status=${status}` : ''}`
+      : `/inventory/transfer-requests/${branchId}${status ? `?status=${status}` : ''}`;
+    return this.cachedGet(url, 0);
+  }
+
+  async getPendingIncoming(branchId: string): Promise<any[]> {
+    return this.cachedGet(`/inventory/transfer-requests/${branchId}/pending`, 0);
   }
 
   async transferStock(fromBranchId: string, toBranchId: string, productId: string, quantity: number, notes?: string): Promise<any> {

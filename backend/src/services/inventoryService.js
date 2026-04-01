@@ -226,6 +226,225 @@ export const updateBranchStock = async (branchId, productId, currentStock) => {
   }
 };
 
+export const sendStockTransferRequest = async (fromBranchId, toBranchId, productId, quantity, sentBy, notes = '') => {
+  quantity = parseFloat(quantity);
+  if (quantity <= 0) throw new Error('Quantity must be greater than 0');
+
+  // 1. Validate source stock
+  const { data: sourceStock, error: srcErr } = await supabase
+    .from('branch_stock')
+    .select('current_stock')
+    .eq('branch_id', fromBranchId)
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (srcErr) throw srcErr;
+  const fromBefore = parseFloat(sourceStock?.current_stock || 0);
+  if (fromBefore < quantity) {
+    throw new Error(`Insufficient stock. Available: ${fromBefore}kg, Requested: ${quantity}kg`);
+  }
+
+  const fromAfter = parseFloat((fromBefore - quantity).toFixed(2));
+
+  // 2. Deduct from sender immediately (stock is now in transit)
+  const { error: deductErr } = await supabase
+    .from('branch_stock')
+    .update({ current_stock: fromAfter, updated_at: new Date().toISOString() })
+    .eq('branch_id', fromBranchId)
+    .eq('product_id', productId);
+  if (deductErr) throw deductErr;
+
+  // 3. Create pending transfer request
+  const { data: request, error: insertErr } = await supabase
+    .from('stock_transfer_requests')
+    .insert({
+      product_id: productId,
+      from_branch_id: fromBranchId,
+      to_branch_id: toBranchId,
+      quantity,
+      status: 'pending',
+      notes: notes || null,
+      sent_by: sentBy,
+      from_stock_before: fromBefore,
+      from_stock_after: fromAfter,
+    })
+    .select()
+    .single();
+  if (insertErr) throw insertErr;
+
+  // 4. Update sender stock_history closing stock
+  const getKenyaDate = () => new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  const today = getKenyaDate();
+  const fromHistory = await ensureDailyHistory(productId, fromBranchId, today);
+  if (fromHistory) {
+    await supabase.from('stock_history')
+      .update({ closing_stock: fromAfter, added_by: `Sent to branch (${sentBy}) — pending` })
+      .eq('id', fromHistory.id);
+  }
+
+  return request;
+};
+
+export const acceptStockTransferRequest = async (requestId, receivedBy) => {
+  // 1. Get the pending request
+  const { data: req, error: fetchErr } = await supabase
+    .from('stock_transfer_requests')
+    .select('*')
+    .eq('id', requestId)
+    .single();
+  if (fetchErr) throw fetchErr;
+  if (req.status !== 'pending') throw new Error(`Transfer already ${req.status}`);
+
+  // 2. Get receiver current stock
+  const { data: destStock } = await supabase
+    .from('branch_stock')
+    .select('current_stock')
+    .eq('branch_id', req.to_branch_id)
+    .eq('product_id', req.product_id)
+    .maybeSingle();
+
+  const toBefore = parseFloat(destStock?.current_stock || 0);
+  const toAfter = parseFloat((toBefore + parseFloat(req.quantity)).toFixed(2));
+
+  // 3. Add stock to receiver
+  const { error: addErr } = await supabase
+    .from('branch_stock')
+    .upsert({
+      branch_id: req.to_branch_id,
+      product_id: req.product_id,
+      current_stock: toAfter,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'branch_id,product_id' });
+  if (addErr) throw addErr;
+
+  // 4. Mark request as accepted
+  const { data: updated, error: updateErr } = await supabase
+    .from('stock_transfer_requests')
+    .update({
+      status: 'accepted',
+      received_by: receivedBy,
+      to_stock_before: toBefore,
+      to_stock_after: toAfter,
+      resolved_at: new Date().toISOString()
+    })
+    .eq('id', requestId)
+    .select()
+    .single();
+  if (updateErr) throw updateErr;
+
+  // 5. Write to stock_transfers audit log
+  const getKenyaDate = () => new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  const today = getKenyaDate();
+
+  await supabase.from('stock_transfers').insert({
+    product_id: req.product_id,
+    from_branch_id: req.from_branch_id,
+    to_branch_id: req.to_branch_id,
+    quantity: req.quantity,
+    from_stock_before: req.from_stock_before,
+    from_stock_after: req.from_stock_after,
+    to_stock_before: toBefore,
+    to_stock_after: toAfter,
+    transferred_by: `${req.sent_by} → accepted by ${receivedBy}`,
+    transfer_date: today,
+    notes: req.notes,
+  });
+
+  // 6. Update receiver stock_history
+  const toHistory = await ensureDailyHistory(req.product_id, req.to_branch_id, today);
+  if (toHistory) {
+    const updatedOpening = parseFloat((parseFloat(toHistory.opening_stock) + parseFloat(req.quantity)).toFixed(2));
+    await supabase.from('stock_history')
+      .update({
+        opening_stock: updatedOpening,
+        closing_stock: toAfter,
+        added_by: `Received from branch (${receivedBy})`
+      })
+      .eq('id', toHistory.id);
+  }
+
+  return updated;
+};
+
+export const rejectStockTransferRequest = async (requestId, rejectedBy) => {
+  // 1. Get the pending request
+  const { data: req, error: fetchErr } = await supabase
+    .from('stock_transfer_requests')
+    .select('*')
+    .eq('id', requestId)
+    .single();
+  if (fetchErr) throw fetchErr;
+  if (req.status !== 'pending') throw new Error(`Transfer already ${req.status}`);
+
+  // 2. Return stock to sender
+  const { error: returnErr } = await supabase
+    .from('branch_stock')
+    .update({ current_stock: req.from_stock_before, updated_at: new Date().toISOString() })
+    .eq('branch_id', req.from_branch_id)
+    .eq('product_id', req.product_id);
+  if (returnErr) throw returnErr;
+
+  // 3. Mark as rejected
+  const { data: updated, error: updateErr } = await supabase
+    .from('stock_transfer_requests')
+    .update({
+      status: 'rejected',
+      received_by: rejectedBy,
+      resolved_at: new Date().toISOString()
+    })
+    .eq('id', requestId)
+    .select()
+    .single();
+  if (updateErr) throw updateErr;
+
+  // 4. Restore sender stock_history
+  const getKenyaDate = () => new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  const today = getKenyaDate();
+  const fromHistory = await ensureDailyHistory(req.product_id, req.from_branch_id, today);
+  if (fromHistory) {
+    await supabase.from('stock_history')
+      .update({ closing_stock: req.from_stock_before, added_by: `Transfer rejected by ${rejectedBy} — stock returned` })
+      .eq('id', fromHistory.id);
+  }
+
+  return updated;
+};
+
+export const getTransferRequests = async (branchId, status = null) => {
+  let query = supabase
+    .from('stock_transfer_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (branchId) {
+    query = query.or(`from_branch_id.eq.${branchId},to_branch_id.eq.${branchId}`);
+  }
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+};
+
+export const getPendingIncoming = async (branchId) => {
+  const { data, error } = await supabase
+    .from('stock_transfer_requests')
+    .select('*')
+    .eq('to_branch_id', branchId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
 export const transferStock = async (fromBranchId, toBranchId, productId, quantity, transferredBy, notes = '') => {
   quantity = parseFloat(quantity);
   if (quantity <= 0) throw new Error('Transfer quantity must be greater than 0');
@@ -451,6 +670,79 @@ export const updateDispatchPayment = async (dispatchId, paymentStatus, paymentMe
     .single();
   if (error) throw error;
   return data;
+};
+
+// ─── Mid-Shift Stock Addition (with full audit) ───────────────────────────
+export const addStockWithAudit = async (branchId, productId, quantity, addedBy, addedByRole, reason) => {
+  quantity = parseFloat(quantity);
+  if (quantity <= 0) throw new Error('Quantity must be greater than 0');
+
+  const getKenyaDate = () => new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  const today = getKenyaDate();
+
+  // 1. Get current stock
+  const { data: current, error: fetchErr } = await supabase
+    .from('branch_stock')
+    .select('current_stock')
+    .eq('branch_id', branchId)
+    .eq('product_id', productId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+
+  const stockBefore = parseFloat(current?.current_stock || 0);
+  const stockAfter  = parseFloat((stockBefore + quantity).toFixed(2));
+
+  // 2. Update branch_stock
+  const { error: updateErr } = await supabase
+    .from('branch_stock')
+    .upsert({ branch_id: branchId, product_id: productId, current_stock: stockAfter, updated_at: new Date().toISOString() },
+      { onConflict: 'branch_id,product_id' });
+  if (updateErr) throw updateErr;
+
+  // 3. Write immutable audit record
+  const { data: auditRow, error: auditErr } = await supabase
+    .from('stock_additions')
+    .insert({
+      branch_id: branchId,
+      product_id: productId,
+      quantity,
+      stock_before: stockBefore,
+      stock_after: stockAfter,
+      reason: reason || null,
+      added_by: addedBy,
+      added_by_role: addedByRole || 'cashier',
+      addition_date: today,
+    })
+    .select()
+    .single();
+  if (auditErr) throw auditErr;
+
+  // 4. Reflect in today's stock_history — opening_stock increases (new stock arrived)
+  const history = await ensureDailyHistory(productId, branchId, today);
+  if (history) {
+    const newOpening = parseFloat((parseFloat(history.opening_stock) + quantity).toFixed(2));
+    await supabase.from('stock_history')
+      .update({ opening_stock: newOpening, added_by: `Mid-shift addition by ${addedBy}` })
+      .eq('id', history.id);
+  }
+
+  return { ...auditRow, stockBefore, stockAfter };
+};
+
+export const getStockAdditions = async (branchId, limit = 100, offset = 0) => {
+  let query = supabase
+    .from('stock_additions')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (branchId && branchId !== 'all') {
+    query = query.eq('branch_id', branchId);
+  }
+  const { data, error, count } = await query;
+  if (error) throw error;
+  return { data, count };
 };
 
 export const addStock = async (branchId, productId, amount, addedBy) => {
