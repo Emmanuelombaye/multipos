@@ -184,6 +184,7 @@ export default function App() {
     } else {
       return [
         { id: 'pos', label: 'POS', icon: ShoppingCart },
+        { id: 'inventory', label: 'Transfers', icon: Package },
         { id: 'closing', label: 'Close Stock', icon: PackageCheck },
       ];
     }
@@ -210,7 +211,10 @@ export default function App() {
       case 'closing':
         return <ClosingStockScreen branchId={selectedBranch} branchName={branchName} />;
       case 'inventory':
-        return <InventoryScreen branchId={userRole === 'admin' ? undefined : selectedBranch} />;
+        return <InventoryScreen
+          branchId={userRole === 'admin' ? undefined : selectedBranch}
+          initialTab={userRole === 'cashier' ? 'transfers' : 'current'}
+        />;
       case 'reports':
         return <ReportsScreen />;
       default:

@@ -288,27 +288,29 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isAdminView && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isAdminView && (
+                <button
+                  onClick={() => setTransferModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-medium text-sm"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                  Transfer
+                </button>
+              )}
               <button
-                onClick={() => setTransferModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-medium text-sm"
+                onClick={() => {
+                  setDispatchForm((f) => ({ ...f, branchId: branchId || (branches[0]?.id || ''), dispatchDate: new Date().toISOString().split('T')[0] }));
+                  setDispatchModal(true);
+                }}
+                className="flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm"
               >
-                <ArrowRightLeft className="w-4 h-4" />
-                Transfer
+                <Truck className="w-4 h-4" />
+                Dispatch
               </button>
-            )}
-            <button
-              onClick={() => {
-                setDispatchForm((f) => ({ ...f, branchId: branchId || (branches[0]?.id || ''), dispatchDate: new Date().toISOString().split('T')[0] }));
-                setDispatchModal(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm"
-            >
-              <Truck className="w-4 h-4" />
-              Dispatch
-            </button>
-            <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'dispatches') loadDispatches(); if (v === 'transfers') loadTransfers(); }} className="w-full md:w-auto">
+            </div>
+            <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'dispatches') loadDispatches(); if (v === 'transfers') loadTransfers(); }} className="w-full">
               <TabsList className="bg-neutral-100 grid w-full grid-cols-4">
                 <TabsTrigger value="current">Stock</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
