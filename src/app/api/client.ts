@@ -490,11 +490,21 @@ class APIClient {
     const url = branchId === 'all' 
       ? `/inventory/transfer-requests/all${status ? `?status=${status}` : ''}`
       : `/inventory/transfer-requests/${branchId}${status ? `?status=${status}` : ''}`;
-    return this.cachedGet(url, 0);
+    try {
+      return await this.cachedGet(url, 0);
+    } catch (error) {
+      console.error('Transfer requests fetch error:', error);
+      return [];
+    }
   }
 
   async getPendingIncoming(branchId: string): Promise<any[]> {
-    return this.cachedGet(`/inventory/transfer-requests/${branchId}/pending`, 0);
+    try {
+      return await this.cachedGet(`/inventory/transfer-requests/${branchId}/pending`, 0);
+    } catch (error) {
+      console.error('Pending incoming fetch error:', error);
+      return [];
+    }
   }
 
   async transferStock(fromBranchId: string, toBranchId: string, productId: string, quantity: number, notes?: string): Promise<any> {
