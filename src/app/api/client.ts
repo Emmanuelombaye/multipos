@@ -147,7 +147,7 @@ class APIClient {
       return { success: true, synced: 0, errors: 0 };
     }
 
-    await this.syncOfflineQueue();
+    await this.flushOfflineQueue();
 
     const remainingQueue = getOfflineQueue();
     const synced = initialCount - remainingQueue.length;

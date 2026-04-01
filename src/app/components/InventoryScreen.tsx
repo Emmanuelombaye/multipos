@@ -44,8 +44,9 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
       const target = branchId || 'all';
       const result = await apiClient.getExternalDispatches(target, 100, 0);
       setDispatches(Array.isArray(result?.data) ? result.data : []);
-    } catch {
-      toast.error('Failed to load dispatches');
+    } catch (error) {
+      console.error('Dispatch load error:', error);
+      setDispatches([]);
     } finally {
       setDispatchesLoading(false);
     }
@@ -56,8 +57,9 @@ export function InventoryScreen({ branchId, hideHeader = false, hidePadding = fa
     try {
       const result = await apiClient.getStockTransfers(branchId || undefined, 100, 0);
       setTransfers(Array.isArray(result?.data) ? result.data : []);
-    } catch {
-      toast.error('Failed to load transfer log');
+    } catch (error) {
+      console.error('Transfer load error:', error);
+      setTransfers([]);
     } finally {
       setTransfersLoading(false);
     }
