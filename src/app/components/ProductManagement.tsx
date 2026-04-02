@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Plus, Edit2, Trash2, Search, Store } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, Search, Store, Loader } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -28,6 +28,7 @@ export function ProductManagement() {
   // Confirmation states
   const [isConfirmingAdd, setIsConfirmingAdd] = useState(false);
   const [isConfirmingStock, setIsConfirmingStock] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -98,6 +99,8 @@ export function ProductManagement() {
     }
 
     // Step 2: Actually submit
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await apiClient.addProductToBranch(
         selectedBranchId,
@@ -117,12 +120,16 @@ export function ProductManagement() {
     } catch (error: any) {
       console.error('Failed to add product:', error);
       toast.error(error.response?.data?.error || 'Failed to add product');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEditProduct = async () => {
     if (!selectedProduct || !selectedBranchId) return;
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       // Use branch-specific update for price and threshold
       await apiClient.updateBranchProduct(selectedBranchId, selectedProduct.id, {
@@ -151,6 +158,8 @@ export function ProductManagement() {
     } catch (error) {
       console.error('Failed to update product:', error);
       toast.error('Failed to update product');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -162,6 +171,8 @@ export function ProductManagement() {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await apiClient.addStock(selectedBranchId, selectedProduct.id, parseFloat(stockAmount));
       toast.success(`Added ${stockAmount}kg to ${selectedProduct.name}`);
@@ -172,12 +183,16 @@ export function ProductManagement() {
     } catch (error) {
       console.error('Failed to adjust stock:', error);
       toast.error('Failed to adjust stock');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteProduct = async () => {
     if (!selectedProduct || !selectedBranchId) return;
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       await apiClient.removeProductFromBranch(selectedBranchId, selectedProduct.id);
 
@@ -188,6 +203,8 @@ export function ProductManagement() {
     } catch (error) {
       console.error('Failed to remove product:', error);
       toast.error('Failed to remove product from branch');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -474,11 +491,15 @@ export function ProductManagement() {
           <DialogFooter>
             {isConfirmingAdd ? (
               <>
-                <Button variant="ghost" onClick={() => setIsConfirmingAdd(false)}>
+                <Button variant="ghost" onClick={() => setIsConfirmingAdd(false)} disabled={isSubmitting}>
                   Back & Edit
                 </Button>
-                <Button onClick={handleAddProduct} className="bg-red-700 hover:bg-red-800">
-                  Confirm & Add Product
+                <Button onClick={handleAddProduct} className="bg-red-700 hover:bg-red-800" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <><Loader className="w-4 h-4 mr-2 animate-spin" />Adding...</>
+                  ) : (
+                    'Confirm & Add Product'
+                  )}
                 </Button>
               </>
             ) : (
@@ -554,11 +575,15 @@ export function ProductManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowEditDialog(false); setSelectedProduct(null); resetForm(); }}>
+            <Button variant="outline" onClick={() => { setShowEditDialog(false); setSelectedProduct(null); resetForm(); }} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleEditProduct} className="bg-red-700 hover:bg-red-800">
-              Save Changes
+            <Button onClick={handleEditProduct} className="bg-red-700 hover:bg-red-800" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <><Loader className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -644,11 +669,15 @@ export function ProductManagement() {
           <DialogFooter>
             {isConfirmingStock ? (
               <>
-                <Button variant="ghost" onClick={() => setIsConfirmingStock(false)} className="text-neutral-400 hover:text-white hover:bg-neutral-800">
+                <Button variant="ghost" onClick={() => setIsConfirmingStock(false)} className="text-neutral-400 hover:text-white hover:bg-neutral-800" disabled={isSubmitting}>
                   Go Back
                 </Button>
-                <Button onClick={handleAdjustStock} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8">
-                  Confirm & Save
+                <Button onClick={handleAdjustStock} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <><Loader className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                  ) : (
+                    'Confirm & Save'
+                  )}
                 </Button>
               </>
             ) : (
@@ -680,11 +709,15 @@ export function ProductManagement() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setSelectedProduct(null); }}>
+            <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setSelectedProduct(null); }} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleDeleteProduct} className="bg-red-700 hover:bg-red-800">
-              Remove from Branch
+            <Button onClick={handleDeleteProduct} className="bg-red-700 hover:bg-red-800" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <><Loader className="w-4 h-4 mr-2 animate-spin" />Removing...</>
+              ) : (
+                'Remove from Branch'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

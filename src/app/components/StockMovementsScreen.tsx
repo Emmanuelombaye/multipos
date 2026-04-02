@@ -23,6 +23,7 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
   const [showSendForm, setShowSendForm] = useState(false);
   const [showDispatchForm, setShowDispatchForm] = useState(false);
   const [branchProducts, setBranchProducts] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -64,8 +65,11 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
 
   const handleSendTransfer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     const form = e.currentTarget;
     const data = new FormData(form);
+    setIsSubmitting(true);
     try {
       await apiClient.sendTransferRequest(
         branchId,
@@ -79,13 +83,18 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
       loadAll();
     } catch {
       toast.error('Failed to send transfer');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDispatch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     const form = e.currentTarget;
     const data = new FormData(form);
+    setIsSubmitting(true);
     try {
       await apiClient.createExternalDispatch({
         branchId,
@@ -104,26 +113,36 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
       loadAll();
     } catch {
       toast.error('Failed to record dispatch');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAccept = async (requestId: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await apiClient.acceptTransferRequest(requestId);
       toast.success('Transfer accepted');
       loadAll();
     } catch {
       toast.error('Failed to accept');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleReject = async (requestId: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await apiClient.rejectTransferRequest(requestId);
       toast.success('Transfer rejected');
       loadAll();
     } catch {
       toast.error('Failed to reject');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -312,11 +331,11 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
                   {r.notes && <p className="text-xs text-neutral-400 italic mb-2">"{r.notes}"</p>}
                   {!isAdmin && isIncoming && r.status === 'pending' && (
                     <div className="grid grid-cols-2 gap-2 mt-3">
-                      <button onClick={() => handleAccept(r.id)} className="flex items-center justify-center gap-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium active:scale-95">
-                        <Check className="w-4 h-4" /> Accept
+                      <button onClick={() => handleAccept(r.id)} className="flex items-center justify-center gap-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium active:scale-95 disabled:opacity-50" disabled={isSubmitting}>
+                        {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Accept
                       </button>
-                      <button onClick={() => handleReject(r.id)} className="flex items-center justify-center gap-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium active:scale-95">
-                        <X className="w-4 h-4" /> Reject
+                      <button onClick={() => handleReject(r.id)} className="flex items-center justify-center gap-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium active:scale-95 disabled:opacity-50" disabled={isSubmitting}>
+                        {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />} Reject
                       </button>
                     </div>
                   )}
@@ -452,8 +471,12 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
                 <label className="block text-sm font-medium mb-1">Notes (optional)</label>
                 <textarea name="notes" rows={2} className="w-full border rounded-lg p-2" />
               </div>
-              <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-medium active:scale-95">
-                Send Request
+              <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-medium active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <><RefreshCw className="w-4 h-4 animate-spin" />Sending...</>
+                ) : (
+                  'Send Request'
+                )}
               </button>
             </form>
           </div>
@@ -525,8 +548,12 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
                 <label className="block text-sm font-medium mb-1">Notes (optional)</label>
                 <textarea name="notes" rows={2} className="w-full border rounded-lg p-2" />
               </div>
-              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium active:scale-95">
-                Record Dispatch
+              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <><RefreshCw className="w-4 h-4 animate-spin" />Recording...</>
+                ) : (
+                  'Record Dispatch'
+                )}
               </button>
             </form>
           </div>

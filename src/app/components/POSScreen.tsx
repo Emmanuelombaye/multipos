@@ -396,8 +396,14 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowExpenseDialog(false)}>Cancel</Button>
-                      <Button className="bg-red-700 hover:bg-red-800" onClick={handleLogExpense}>Submit Expense</Button>
+                      <Button variant="outline" onClick={() => setShowExpenseDialog(false)} disabled={isProcessing}>Cancel</Button>
+                      <Button className="bg-red-700 hover:bg-red-800" onClick={handleLogExpense} disabled={isProcessing}>
+                        {isProcessing ? (
+                          <><Loader className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
+                        ) : (
+                          'Submit Expense'
+                        )}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -446,7 +452,11 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                         onClick={handleSaveStockCount}
                         disabled={isProcessing}
                       >
-                        {isProcessing ? 'Saving...' : 'Save Closing Stock'}
+                        {isProcessing ? (
+                          <><Loader className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                        ) : (
+                          'Save Closing Stock'
+                        )}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -709,24 +719,30 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 <Button
                   onClick={() => { handlePayment('cash'); setShowCartSheet(false); }}
                   className="w-full h-14 bg-green-700 hover:bg-green-800 text-white text-lg font-bold rounded-xl shadow-lg shadow-green-100 flex items-center justify-center gap-2"
+                  disabled={isProcessing}
                 >
-                  <Banknote className="w-5 h-5" />
-                  Pay Cash
+                  {isProcessing ? (
+                    <><Loader className="w-5 h-5 animate-spin" />Processing...</>
+                  ) : (
+                    <><Banknote className="w-5 h-5" />Pay Cash</>
+                  )}
                 </Button>
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={() => { handlePayment('mpesa'); setShowCartSheet(false); }}
                     className="h-12 bg-[#39B54A] hover:bg-[#2e933c] text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                    disabled={isProcessing}
                   >
-                    <Smartphone className="w-4 h-4" />
+                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
                     M-Pesa
                   </Button>
                   <Button
                     onClick={() => { handlePayment('loan'); setShowCartSheet(false); }}
                     className="h-12 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                    disabled={isProcessing}
                   >
-                    <Handshake className="w-4 h-4" />
+                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Handshake className="w-4 h-4" />}
                     Loan
                   </Button>
                 </div>
@@ -802,14 +818,18 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
             <div className="space-y-2">
               <Button onClick={() => handlePayment('cash')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-700 text-white font-bold">
-                Cash Payment
+                {isProcessing ? (
+                  <><Loader className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+                ) : (
+                  'Cash Payment'
+                )}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button onClick={() => handlePayment('mpesa')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-600 text-white font-bold">
-                  M-Pesa
+                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'M-Pesa'}
                 </Button>
                 <Button onClick={() => handlePayment('loan')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-bold">
-                  Loan
+                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'Loan'}
                 </Button>
               </div>
             </div>
