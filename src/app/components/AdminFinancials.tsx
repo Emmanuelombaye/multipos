@@ -427,7 +427,13 @@ export function AdminFinancials() {
             {filteredStock.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-neutral-400 p-8 text-center">
                 <PackageSearch className="w-12 h-12 mb-2 opacity-20" />
-                <p>No stock logs found for this day</p>
+                <p className="font-semibold mb-2">No stock history records found</p>
+                <p className="text-xs text-neutral-500">This could mean:</p>
+                <ul className="text-xs text-neutral-500 mt-2 space-y-1 text-left">
+                  <li>• No products have been added to this branch yet</li>
+                  <li>• No opening stock was recorded for {selectedDate}</li>
+                  <li>• Stock history auto-initialization hasn't run yet</li>
+                </ul>
               </div>
             ) : (
               <table className="w-full">
@@ -445,24 +451,48 @@ export function AdminFinancials() {
                     const openingStock = sh.opening_stock || 0;
                     const closingStock = sh.closing_stock ?? null;
                     const variance = closingStock !== null ? (openingStock - closingStock) : null;
+                    const hasIssue = openingStock === 0 && closingStock === null;
                     return (
-                      <tr key={sh.id} className="hover:bg-neutral-50">
+                      <tr key={sh.id} className={`hover:bg-neutral-50 ${hasIssue ? 'bg-amber-50' : ''}`}>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-neutral-500">
-                              {product?.name?.split(' ')[0] || 'Item'}
-                            </span>
-                            <span className="text-sm font-medium">{product?.name || 'Product'}</span>
+                            <span className="text-lg">{product?.image || '📦'}</span>
+                            <div>
+                              <p className="text-sm font-medium">{product?.name || 'Product'}</p>
+                              {hasIssue && (
+                                <p className="text-xs text-amber-600 flex items-center gap-1">
+                                  <span>⚠️</span> No data recorded
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-blue-700">{openingStock}kg</td>
-                        <td className="py-3 px-4 text-center font-bold text-green-700">{closingStock !== null ? `${closingStock}kg` : '--'}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`font-bold ${openingStock === 0 ? 'text-amber-600' : 'text-blue-700'}`}>
+                            {openingStock}kg
+                          </span>
+                          {openingStock === 0 && (
+                            <p className="text-xs text-amber-600">Not set</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {closingStock !== null ? (
+                            <span className="font-bold text-green-700">{closingStock}kg</span>
+                          ) : (
+                            <div>
+                              <span className="text-amber-600 font-bold">--</span>
+                              <p className="text-xs text-amber-600">Pending</p>
+                            </div>
+                          )}
+                        </td>
                         <td className="py-3 px-4 text-right">
                           {variance !== null ? (
                             <Badge variant="outline" className={variance > 0 ? 'text-red-700 border-red-200' : 'text-green-700 border-green-200'}>
                               {variance}kg
                             </Badge>
-                          ) : '--'}
+                          ) : (
+                            <span className="text-xs text-neutral-400">N/A</span>
+                          )}
                         </td>
                       </tr>
                     );
