@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DollarSign, Store, Users, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader } from 'lucide-react';
+import { DollarSign, Store, Users, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
@@ -16,11 +16,14 @@ export function AdminDashboard() {
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [expensesByCategory, setExpensesByCategory] = useState<any[]>([]);
+  const [latestAudit, setLatestAudit] = useState<any>(null);
 
   useEffect(() => {
     loadDashboardData();
+    loadAuditStatus();
     const intervalId = setInterval(() => {
       loadDashboardData(true);
+      loadAuditStatus();
     }, 15000);
 
     return () => clearInterval(intervalId);
@@ -138,6 +141,22 @@ export function AdminDashboard() {
       if (!silent) {
         setLoading(false);
       }
+    }
+  };
+
+  const loadAuditStatus = async () => {
+    try {
+      const response = await fetch('/api/audit/status', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLatestAudit(data);
+      }
+    } catch (error) {
+      console.error('Failed to load audit status:', error);
     }
   };
 
@@ -289,15 +308,32 @@ export function AdminDashboard() {
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-l-red-600">
+        <Card className="p-6 border-l-4 border-l-amber-600">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-neutral-500 mb-1">Low Stock Alerts</p>
-              <p className="text-2xl font-bold text-neutral-900">{alertCount}</p>
-              <p className="text-sm text-red-600 mt-2 font-medium">Requires attention</p>
+              <p className="text-sm font-medium text-neutral-500 mb-1">System Audit</p>
+              {latestAudit && latestAudit.status ? (
+                <>
+                  <div className="flex items-center gap-2 mt-1">
+                    {latestAudit.status === 'success' ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    )}
+                    <span className={`text-lg font-bold ${latestAudit.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                      {latestAudit.status === 'success' ? 'Healthy' : 'Issues'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Last: {new Date(latestAudit.created_at).toLocaleString()}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-neutral-500 mt-2">No audit data</p>
+              )}
             </div>
-            <div className="p-3 bg-red-50 rounded-full">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
+            <div className="p-3 bg-amber-50 rounded-full">
+              <Shield className="w-6 h-6 text-amber-600" />
             </div>
           </div>
         </Card>

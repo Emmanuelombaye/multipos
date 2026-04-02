@@ -14,11 +14,13 @@ import expenseRoutes from './routes/expenses.js';
 import staffRoutes from './routes/staff.js';
 import dashboardRoutes from './routes/dashboard.js';
 import reconciliationRoutes from './routes/reconciliation.js';
+import auditRoutes from './routes/audit.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
 import { cacheMiddleware, cacheHeaders } from './middleware/cache.js';
+import { initializeScheduledJobs } from './services/auditScheduler.js';
 
 dotenv.config();
 
@@ -81,6 +83,7 @@ app.use('/api/expenses', authenticate, expenseRoutes);
 app.use('/api/staff', authenticate, staffRoutes);
 app.use('/api/dashboard', authenticate, dashboardRoutes);
 app.use('/api/reconciliation', authenticate, reconciliationRoutes);
+app.use('/api/audit', authenticate, auditRoutes);
 
 // Serve frontend in production environments or if dist exists
 const __filename = fileURLToPath(import.meta.url);
@@ -142,4 +145,7 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+  
+  // Initialize automated audit system
+  initializeScheduledJobs();
 });
