@@ -470,7 +470,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 <Loader className="w-8 h-8 animate-spin text-red-700" />
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mb-24 md:mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mb-4 md:mb-4 pb-32 lg:pb-0">
                 {products.map((product) => (
                   <Card
                     key={product.id}
@@ -500,7 +500,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
             {/* Weight Selector - Mobile Fixed Bottom / Desktop Below Grid */}
             {selectedProduct && (
-              <Card className="fixed lg:relative bottom-0 left-0 right-0 lg:bottom-auto p-4 bg-white border-t-4 border-red-700 z-10 shadow-xl lg:mb-4">
+              <Card className="fixed lg:relative bottom-20 left-0 right-0 lg:bottom-auto p-4 bg-white border-t-4 border-red-700 z-30 shadow-xl lg:mb-4 lg:z-10">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-neutral-900 text-sm lg:text-base">
                     {products.find((p) => p.id === selectedProduct)?.name} -
