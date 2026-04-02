@@ -82,11 +82,46 @@ export const getBranchWithStats = async (branchId) => {
 
   const todayExpenses = todayExpenseRows?.reduce((sum, e) => sum + e.amount, 0) || 0;
 
+  // ACCOUNTABILITY CHECK: Get stock discrepancies
+  const { data: stockHistory } = await supabase
+    .from('stock_history')
+    .select('product_id, opening_stock, closing_stock')
+    .eq('branch_id', branchId)
+    .eq('date', today);
+
+  const { data: liveStock } = await supabase
+    .from('branch_stock')
+    .select('product_id, current_stock')
+    .eq('branch_id', branchId);
+
+  let unaccountedStock = 0;
+  let totalOpeningStock = 0;
+  let totalLiveStock = 0;
+
+  if (liveStock && stockHistory) {
+    liveStock.forEach(live => {
+      const history = stockHistory.find(h => h.product_id === live.product_id);
+      const opening = parseFloat(history?.opening_stock || 0);
+      const current = parseFloat(live.current_stock || 0);
+      
+      totalOpeningStock += opening;
+      totalLiveStock += current;
+      
+      // If live stock exists but opening was 0, it's unaccounted
+      if (opening === 0 && current > 0) {
+        unaccountedStock += current;
+      }
+    });
+  }
+
   return {
     ...branch,
     staffCount: staffCount || 0,
     todaySales,
     todayExpenses,
     profit: todaySales - todayExpenses,
+    totalOpeningStock,
+    totalLiveStock,
+    unaccountedStock,
   };
 };

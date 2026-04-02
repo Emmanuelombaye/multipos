@@ -378,46 +378,70 @@ export function AdminDashboard() {
       </div>
 
       <Card className="p-6">
-        <h3 className="font-semibold text-neutral-900 mb-4">Branch Performance</h3>
+        <h3 className="font-semibold text-neutral-900 mb-4">Branch Performance & Stock Accountability</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-neutral-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-700">Branch</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-700">Status</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Opening Stock</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Live Stock</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Unaccounted</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Today Sales</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Today Expenses</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Profit</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Staff</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Location</th>
               </tr>
             </thead>
             <tbody>
-              {branchesData.map((branch: any, idx: number) => (
-                <tr key={idx} className="border-b hover:bg-neutral-50">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{branch.name}</td>
-                  <td className="px-4 py-3">
-                    <Badge className={branch.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                      {branch.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-semibold text-green-700">
-                    KES {(branch.todaySales || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-semibold text-red-700">
-                    KES {(branch.todayExpenses || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-semibold">
-                    <span className={(branch.todaySales || 0) - (branch.todayExpenses || 0) >= 0 ? 'text-green-700' : 'text-red-700'}>
-                      KES {((branch.todaySales || 0) - (branch.todayExpenses || 0)).toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{branch.staffCount || 0}</td>
-                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{branch.location}</td>
-                </tr>
-              ))}
+              {branchesData.map((branch: any, idx: number) => {
+                const hasUnaccounted = (branch.unaccountedStock || 0) > 0;
+                return (
+                  <tr key={idx} className={`border-b hover:bg-neutral-50 ${hasUnaccounted ? 'bg-amber-50' : ''}`}>
+                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">{branch.name}</td>
+                    <td className="px-4 py-3">
+                      <Badge className={branch.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                        {branch.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">
+                      {(branch.totalOpeningStock || 0).toFixed(1)}kg
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-blue-700">
+                      {(branch.totalLiveStock || 0).toFixed(1)}kg
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {hasUnaccounted ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <AlertTriangle className="w-4 h-4 text-amber-600" />
+                          <span className="text-sm font-bold text-amber-600">
+                            {(branch.unaccountedStock || 0).toFixed(1)}kg
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-green-600 font-medium">✓ Clean</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-green-700">
+                      KES {(branch.todaySales || 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm text-neutral-600">{branch.staffCount || 0}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Stock Accountability Alert</p>
+              <p className="text-xs text-amber-700 mt-1">
+                <strong>Unaccounted Stock</strong> = Stock that exists in the system (Live Stock) but has no opening stock record. 
+                This indicates stock was added without proper documentation (missing transfer records, stock additions, or opening stock entries).
+              </p>
+            </div>
+          </div>
         </div>
       </Card>
     </div>
