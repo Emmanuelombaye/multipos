@@ -637,7 +637,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
           {/* MOBILE FLOATING CHECKOUT BAR */}
           {cart.length > 0 && (
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t-2 border-red-700 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-40 animate-in slide-in-from-bottom duration-300">
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t-2 border-red-700 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-[60] animate-in slide-in-from-bottom duration-300">
               <Button
                 onClick={() => setShowCartSheet(true)}
                 className="w-full h-14 bg-red-700 hover:bg-red-800 shadow-lg flex items-center justify-between px-6 rounded-xl"
