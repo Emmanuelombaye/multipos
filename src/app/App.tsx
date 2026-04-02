@@ -54,6 +54,7 @@ export default function App() {
   const [branchName, setBranchName] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   // CACHE BUSTER: Force reload if version mismatch
   const APP_VERSION = "4.2.2"; // Updated with PDF Export & Auto-Update UI
@@ -108,6 +109,16 @@ export default function App() {
 
     window.addEventListener('auth-expired', handleAuthExpired);
     return () => window.removeEventListener('auth-expired', handleAuthExpired);
+  }, []);
+
+  // Listen for cart sheet toggle to fade bottom nav
+  useEffect(() => {
+    const handleCartToggle = (e: CustomEvent) => {
+      setIsCartOpen(e.detail.isOpen);
+    };
+
+    window.addEventListener('cartSheetToggle', handleCartToggle as EventListener);
+    return () => window.removeEventListener('cartSheetToggle', handleCartToggle as EventListener);
   }, []);
 
   const loadBranchName = async (branchId: string) => {
@@ -372,7 +383,9 @@ export default function App() {
 
       {/* Mobile Bottom Navigation — cashier & manager only */}
       {(userRole === 'cashier' || userRole === 'manager') && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 shadow-lg z-50">
+        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 shadow-lg z-50 transition-opacity duration-300 ${
+          isCartOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}>
           <div className="flex">
             {navigationItems.map((item) => {
               const Icon = item.icon;
