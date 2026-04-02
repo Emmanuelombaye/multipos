@@ -655,7 +655,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
           {/* MOBILE FULL-SCREEN CART SHEET */}
           <Sheet open={showCartSheet} onOpenChange={setShowCartSheet}>
-            <SheetContent side="bottom" className="h-[92vh] p-0 rounded-t-[1.5rem] border-t-0 bg-neutral-50 overflow-hidden flex flex-col focus:ring-0">
+            <SheetContent side="bottom" className="h-[95vh] p-0 rounded-t-[1.5rem] border-t-0 bg-neutral-50 overflow-hidden flex flex-col focus:ring-0">
               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-neutral-300 rounded-full z-50" />
 
               <div className="p-4 pt-7 bg-white border-b flex items-center justify-between shrink-0">
@@ -705,7 +705,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 ))}
               </div>
 
-              <div className="p-4 pb-6 bg-white border-t space-y-3 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0">
+              <div className="p-4 pb-20 bg-white border-t space-y-3 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] shrink-0">
                 <div className="flex justify-between items-end mb-1">
                   <div>
                     <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight leading-none mb-1">Total Amount Due</p>
