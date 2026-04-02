@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Trash2, Printer, CreditCard, Smartphone, Banknote, Plus, Minus, Receipt, PackageSearch, Loader, RefreshCw, Store, Handshake } from 'lucide-react';
+import { ShoppingCart, Trash2, Printer, CreditCard, Smartphone, Banknote, Plus, Minus, Receipt, PackageSearch, Loader, RefreshCw, Store, Handshake, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -638,24 +638,36 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
           {/* MOBILE FLOATING CHECKOUT BAR */}
           {cart.length > 0 && !showCartSheet && (
             <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t-2 border-red-700 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-[60] animate-in slide-in-from-bottom duration-300">
-              <Button
-                onClick={() => setShowCartSheet(true)}
-                className="w-full h-14 bg-red-700 hover:bg-red-800 shadow-lg flex items-center justify-between px-6 rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-2 rounded-lg">
-                    <ShoppingCart className="w-5 h-5 text-white" />
+              <div className="relative">
+                <Button
+                  onClick={() => setShowCartSheet(true)}
+                  className="w-full h-14 bg-red-700 hover:bg-red-800 shadow-lg flex items-center justify-between px-6 rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <ShoppingCart className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1">Basket</p>
+                      <p className="text-lg font-bold text-white leading-none">{cart.length} Items</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1">Basket</p>
-                    <p className="text-lg font-bold text-white leading-none">{cart.length} Items</p>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1 text-right">Total Payne</p>
+                    <p className="text-xl font-bold text-white leading-none">KES {cartTotal.toLocaleString()}</p>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] uppercase font-bold text-white/70 leading-none mb-1 text-right">Total Payne</p>
-                  <p className="text-xl font-bold text-white leading-none">KES {cartTotal.toLocaleString()}</p>
-                </div>
-              </Button>
+                </Button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCart([]);
+                  }}
+                  className="absolute -top-2 -right-2 w-7 h-7 bg-neutral-900 hover:bg-black text-white rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 z-10"
+                  aria-label="Clear cart"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
 
