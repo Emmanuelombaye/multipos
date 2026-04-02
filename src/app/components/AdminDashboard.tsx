@@ -190,6 +190,35 @@ export function AdminDashboard() {
           <p className="text-neutral-600">Real-time enterprise overview</p>
         </div>
         <div className="flex items-center gap-4">
+          <Button
+            onClick={async () => {
+              try {
+                toast.info('Reconciling opening stock...');
+                const response = await fetch('/api/reconciliation/reconcile/all', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                const result = await response.json();
+                if (response.ok) {
+                  toast.success(`✅ ${result.message}. Reconciled ${result.reconciled} records.`);
+                  loadDashboardData();
+                } else {
+                  toast.error('Failed to reconcile stock');
+                }
+              } catch (error) {
+                console.error('Reconciliation error:', error);
+                toast.error('Failed to reconcile stock');
+              }
+            }}
+            variant="outline"
+            className="border-amber-600 text-amber-700 hover:bg-amber-50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reconcile Stock
+          </Button>
           <Tabs value={timeframe} onValueChange={(val: any) => setTimeframe(val)}>
             <TabsList className="bg-neutral-100">
               <TabsTrigger value="week">1W</TabsTrigger>

@@ -13,6 +13,7 @@ import inventoryRoutes from './routes/inventory.js';
 import expenseRoutes from './routes/expenses.js';
 import staffRoutes from './routes/staff.js';
 import dashboardRoutes from './routes/dashboard.js';
+import reconciliationRoutes from './routes/reconciliation.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -79,6 +80,7 @@ app.use('/api/inventory', authenticate, inventoryRoutes);
 app.use('/api/expenses', authenticate, expenseRoutes);
 app.use('/api/staff', authenticate, staffRoutes);
 app.use('/api/dashboard', authenticate, dashboardRoutes);
+app.use('/api/reconciliation', authenticate, reconciliationRoutes);
 
 // Serve frontend in production environments or if dist exists
 const __filename = fileURLToPath(import.meta.url);
