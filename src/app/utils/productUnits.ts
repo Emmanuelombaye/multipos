@@ -2,6 +2,7 @@
 export const getProductUnit = (productName) => {
   const name = (productName || '').toLowerCase();
   
+  // Check if product name contains "kuku" in any case variation
   if (name.includes('kuku')) {
     return {
       unit: 'pieces',
@@ -27,14 +28,17 @@ export const formatQuantity = (quantity, productName) => {
   const value = parseFloat(quantity || 0);
   
   if (unitLabel === 'pieces') {
+    // For pieces, show whole numbers
     return `${Math.round(value)} ${unitLabel}`;
   }
   
+  // For kg, show 2 decimal places
   return `${value.toFixed(2)} ${unitLabel}`;
 };
 
 // Format price with appropriate unit
 export const formatPrice = (price, productName) => {
   const { priceLabel } = getProductUnit(productName);
-  return `KES ${parseFloat(price || 0).toLocaleString()}/${priceLabel.includes('Piece') ? 'pc' : 'kg'}`;
+  const unit = priceLabel.includes('Piece') ? 'pc' : 'kg';
+  return `KES ${parseFloat(price || 0).toLocaleString()}/${unit}`;
 };
