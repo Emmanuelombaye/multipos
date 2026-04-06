@@ -24,6 +24,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error('Uncaught error:', error, errorInfo);
+        console.error('Error stack:', error.stack);
+        console.error('Component stack:', errorInfo.componentStack);
+        
+        // Store error details for display
+        const errorDetails = `${error.toString()}\n\nStack:\n${error.stack}\n\nComponent Stack:\n${errorInfo.componentStack}`;
+        localStorage.setItem('lastError', errorDetails);
 
         // If it's a chunk loading error, force a reload to fetch new assets
         if (this.state.isChunkError) {
@@ -59,16 +65,36 @@ export class ErrorBoundary extends Component<Props, State> {
             }
 
             return this.props.fallback || (
-                <div className="flex items-center justify-center min-h-screen bg-gray-50">
-                    <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+                <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+                    <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md w-full">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-3xl">⚠️</span>
+                        </div>
                         <h2 className="text-xl font-bold text-red-600 mb-2">Something went wrong</h2>
-                        <p className="text-gray-600 mb-6">We encountered an unexpected error.</p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                            Reload Application
-                        </button>
+                        <p className="text-gray-600 mb-4">We encountered an unexpected error.</p>
+                        <details className="text-left mb-6 bg-gray-50 p-4 rounded-lg">
+                            <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">Error Details</summary>
+                            <pre className="text-xs text-gray-600 overflow-auto max-h-40">
+                                {this.state.hasError && window.localStorage.getItem('lastError')}
+                            </pre>
+                        </details>
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                                Reload Application
+                            </button>
+                            <button
+                                onClick={() => {
+                                    localStorage.clear();
+                                    window.location.reload();
+                                }}
+                                className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                            >
+                                Clear Cache & Reload
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
