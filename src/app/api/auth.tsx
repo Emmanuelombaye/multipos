@@ -31,7 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem('token');
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isValidating, setIsValidating] = useState(true);
 
   // Validate token on mount
   useEffect(() => {
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          setIsValidating(false);
           return;
         }
         try {
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
         }
       }
+      setIsValidating(false);
     };
 
     validateToken();
@@ -110,7 +113,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, login, logout, isLoggedIn }}>
-      {children}
+      {isValidating ? (
+        <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-red-700 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
