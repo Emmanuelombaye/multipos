@@ -82,9 +82,11 @@ export const getBranchWithStats = async (branchId) => {
 
   const todayExpenses = todayExpenseRows?.reduce((sum, e) => sum + e.amount, 0) || 0;
 
-  // VARIANCE CALCULATION: Expected vs Actual Stock
-  // Expected = Opening + Additions + Transfers In - Sales - Transfers Out - Dispatches
-  // Variance = Actual (Live Stock) - Expected
+  // VARIANCE CALCULATION:
+  // When cashier submits closing_stock, that's the physical count (truth).
+  // Variance = Closing Stock (physical) vs Current Stock (system)
+  // If they match, variance = 0 (cashier confirmed the system is correct)
+  // If they don't match, variance = difference (data entry error or system bug)
   
   const { data: stockHistory } = await supabase
     .from('stock_history')
@@ -141,38 +143,47 @@ export const getBranchWithStats = async (branchId) => {
     liveStock.forEach(live => {
       const history = stockHistory.find(h => h.product_id === live.product_id);
       const opening = parseFloat(history?.opening_stock || 0);
+      const liveStockValue = parseFloat(live.current_stock || 0);
       
-      // Use closing_stock if cashier submitted it (physical count), otherwise use live stock
-      const actual = history?.closing_stock !== null && history?.closing_stock !== undefined
-        ? parseFloat(history.closing_stock)
-        : parseFloat(live.current_stock || 0);
+      // If cashier submitted closing_stock, use that as actual (physical count)
+      // Otherwise use live stock from system
+      const closingStock = history?.closing_stock;
+      const hasClosingStock = closingStock !== null && closingStock !== undefined;
+      const actual = hasClosingStock ? parseFloat(closingStock) : liveStockValue;
       
       totalOpeningStock += opening;
       totalLiveStock += actual;
       
-      // Calculate expected stock
-      // NOTE: Stock additions are already included in opening_stock (system updates opening when stock is added mid-shift)
-      // So we don't add them again here to avoid double-counting
+      // Variance calculation:
+      // If cashier submitted closing stock:
+      //   Variance = Closing Stock (physical count) - Live Stock (system)
+      //   This shows if there's a discrepancy between what cashier counted vs what system thinks
+      // If no closing stock submitted:
+      //   Calculate expected based on movements and compare with live stock
       
-      const transferIn = transfersIn?.filter(t => t.product_id === live.product_id)
-        .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
+      let variance = 0;
       
-      const transferOut = transfersOut?.filter(t => t.product_id === live.product_id)
-        .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
-      
-      const dispatched = dispatches?.filter(d => d.product_id === live.product_id)
-        .reduce((sum, d) => sum + parseFloat(d.quantity), 0) || 0;
-      
-      const sold = salesItems?.filter(s => s.product_id === live.product_id)
-        .reduce((sum, s) => sum + parseFloat(s.quantity), 0) || 0;
-      
-      // Expected = Opening + Transfers In - Sales - Transfers Out - Dispatches
-      // (Opening already includes mid-shift additions)
-      const expected = opening + transferIn - sold - transferOut - dispatched;
-      
-      // Variance = Actual (physical count or live stock) - Expected (calculated)
-      // If cashier submitted closing stock, that's the truth and variance shows discrepancy
-      const variance = actual - expected;
+      if (hasClosingStock) {
+        // Cashier did physical count - variance is difference between their count and system
+        variance = parseFloat(closingStock) - liveStockValue;
+      } else {
+        // No physical count yet - calculate expected based on movements
+        const transferIn = transfersIn?.filter(t => t.product_id === live.product_id)
+          .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
+        
+        const transferOut = transfersOut?.filter(t => t.product_id === live.product_id)
+          .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
+        
+        const dispatched = dispatches?.filter(d => d.product_id === live.product_id)
+          .reduce((sum, d) => sum + parseFloat(d.quantity), 0) || 0;
+        
+        const sold = salesItems?.filter(s => s.product_id === live.product_id)
+          .reduce((sum, s) => sum + parseFloat(s.quantity), 0) || 0;
+        
+        // Expected = Opening + Transfers In - Sales - Transfers Out - Dispatches
+        const expected = opening + transferIn - sold - transferOut - dispatched;
+        variance = liveStockValue - expected;
+      }
       
       // Only count significant variances (more than 0.1kg difference)
       if (Math.abs(variance) > 0.1) {
