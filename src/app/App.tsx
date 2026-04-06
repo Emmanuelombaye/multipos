@@ -13,7 +13,8 @@ import {
   X,
   PackageCheck,
   ArrowRightLeft,
-  ClipboardList
+  ClipboardList,
+  Plus
 } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -26,6 +27,7 @@ import { AdminFinancials } from './components/AdminFinancials';
 import { ProductManagement } from './components/ProductManagement';
 import { ClosingStockScreen } from './components/ClosingStockScreen';
 import { StockMovementsScreen } from './components/StockMovementsScreen';
+import { StockAuditScreen } from './components/StockAuditScreen';
 import { StockAdditionScreen } from './components/StockAdditionScreen';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
