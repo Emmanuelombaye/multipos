@@ -41,22 +41,16 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Stale-While-Revalidate Strategy for Other Requests (JS, CSS, Images, etc.)
-  // This serves cached content immediately, then updates the cache in the background
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const networkFetch = fetch(event.request).then((networkResponse) => {
-        // Only cache successful responses
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
+        if (networkResponse && networkResponse.status === 200 && networkResponse.ok) {
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+            cache.put(event.request, networkResponse.clone());
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // Network failure, return nothing (cached response served if available)
-        return null;
-      });
+      }).catch(() => null);
 
       return cachedResponse || networkFetch;
     })
