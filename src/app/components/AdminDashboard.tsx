@@ -465,15 +465,22 @@ export function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-900">Stock Variance Alert</p>
-              <p className="text-xs text-amber-700 mt-1">
-                <strong>Variance</strong> = Difference between actual stock and expected stock after accounting for:
-                Opening Stock + Additions + Transfers In - Sales - Transfers Out - External Dispatches.
-                A variance indicates unexplained stock differences (theft, spoilage, measurement errors, etc.).
+              <p className="text-sm font-semibold text-blue-900">Stock Variance Explanation</p>
+              <p className="text-xs text-blue-700 mt-1">
+                <strong>When cashier submits closing stock:</strong> Variance = Physical Count - System Stock.
+                Shows data entry errors or system bugs.
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                <strong>Before closing stock submitted:</strong> Variance = System Stock - Expected Stock.
+                Expected = Opening + Transfers IN - Sales - Transfers OUT - Dispatches.
+                Shows unrecorded movements.
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                <strong>Note:</strong> Stock additions are included in opening stock, transfers are legitimate movements (not variance).
               </p>
             </div>
           </div>
