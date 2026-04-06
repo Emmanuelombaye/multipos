@@ -147,8 +147,8 @@ export const getBranchWithStats = async (branchId) => {
       totalLiveStock += actual;
       
       // Calculate expected stock
-      const additions = stockAdditions?.filter(a => a.product_id === live.product_id)
-        .reduce((sum, a) => sum + parseFloat(a.quantity), 0) || 0;
+      // NOTE: Stock additions are already included in opening_stock (system updates opening when stock is added mid-shift)
+      // So we don't add them again here to avoid double-counting
       
       const transferIn = transfersIn?.filter(t => t.product_id === live.product_id)
         .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
@@ -162,8 +162,9 @@ export const getBranchWithStats = async (branchId) => {
       const sold = salesItems?.filter(s => s.product_id === live.product_id)
         .reduce((sum, s) => sum + parseFloat(s.quantity), 0) || 0;
       
-      // Expected = Opening + Additions + Transfers In - Sales - Transfers Out - Dispatches
-      const expected = opening + additions + transferIn - sold - transferOut - dispatched;
+      // Expected = Opening + Transfers In - Sales - Transfers Out - Dispatches
+      // (Opening already includes mid-shift additions)
+      const expected = opening + transferIn - sold - transferOut - dispatched;
       
       // Variance = Actual - Expected (positive = surplus, negative = shortage)
       const variance = actual - expected;
