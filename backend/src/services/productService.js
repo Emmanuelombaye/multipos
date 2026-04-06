@@ -130,7 +130,7 @@ export const addProductToBranch = async (branchId, productData) => {
     .from('products')
     .select('*')
     .eq('name', name)
-    .single();
+    .maybeSingle();
 
   let productId;
 
@@ -138,7 +138,7 @@ export const addProductToBranch = async (branchId, productData) => {
     // Product exists, use its ID
     productId = existingProduct.id;
   } else {
-    // Create new product
+    // Create new product with default values
     const { data: newProduct, error: productError } = await supabase
       .from('products')
       .insert({
@@ -161,26 +161,28 @@ export const addProductToBranch = async (branchId, productData) => {
     .select('*')
     .eq('branch_id', branchId)
     .eq('product_id', productId)
-    .single();
+    .maybeSingle();
 
   if (existingStock) {
     throw new Error('Product already exists in this branch');
   }
 
-  // Add branch_stock entry
+  // Add branch_stock entry with branch-specific price and threshold
   const { data: stockEntry, error: stockError } = await supabase
     .from('branch_stock')
     .insert({
       branch_id: branchId,
       product_id: productId,
       current_stock: initialStock,
+      price_per_kg: pricePerKg,
+      low_stock_threshold: lowStockThreshold,
     })
     .select()
     .single();
 
   if (stockError) throw stockError;
 
-  // Return the product with stock
+  // Return the complete product data with branch-specific values
   const { data: product, error: productFetchError } = await supabase
     .from('products')
     .select('*')
@@ -191,6 +193,8 @@ export const addProductToBranch = async (branchId, productData) => {
 
   return {
     ...product,
+    price_per_kg: pricePerKg,
+    low_stock_threshold: lowStockThreshold,
     current_stock: initialStock,
   };
 };
