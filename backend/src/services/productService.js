@@ -96,6 +96,8 @@ export const getBranchProducts = async (branchId) => {
     .select(`
       product_id,
       current_stock,
+      price_per_kg,
+      low_stock_threshold,
       products (
         id,
         name,
