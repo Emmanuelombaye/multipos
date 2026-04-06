@@ -423,15 +423,15 @@ export function AdminDashboard() {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-700">Status</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Opening Stock</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Live Stock</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Unaccounted</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Variance</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Today Sales</th>
               </tr>
             </thead>
             <tbody>
               {branchesData.map((branch: any, idx: number) => {
-                const hasUnaccounted = (branch.unaccountedStock || 0) > 0;
+                const hasVariance = (branch.unaccountedStock || 0) > 0;
                 return (
-                  <tr key={idx} className={`border-b hover:bg-neutral-50 ${hasUnaccounted ? 'bg-amber-50' : ''}`}>
+                  <tr key={idx} className={`border-b hover:bg-neutral-50 ${hasVariance ? 'bg-amber-50' : ''}`}>
                     <td className="px-4 py-3 text-sm font-medium text-neutral-900">{branch.name}</td>
                     <td className="px-4 py-3">
                       <Badge className={branch.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
@@ -445,7 +445,7 @@ export function AdminDashboard() {
                       {(branch.totalLiveStock || 0).toFixed(1)}kg
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {hasUnaccounted ? (
+                      {hasVariance ? (
                         <div className="flex items-center justify-end gap-1">
                           <AlertTriangle className="w-4 h-4 text-amber-600" />
                           <span className="text-sm font-bold text-amber-600">
@@ -469,10 +469,11 @@ export function AdminDashboard() {
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-900">Stock Accountability Alert</p>
+              <p className="text-sm font-semibold text-amber-900">Stock Variance Alert</p>
               <p className="text-xs text-amber-700 mt-1">
-                <strong>Unaccounted Stock</strong> = Stock that exists in the system (Live Stock) but has no opening stock record. 
-                This indicates stock was added without proper documentation (missing transfer records, stock additions, or opening stock entries).
+                <strong>Variance</strong> = Difference between actual stock and expected stock after accounting for:
+                Opening Stock + Additions + Transfers In - Sales - Transfers Out - External Dispatches.
+                A variance indicates unexplained stock differences (theft, spoilage, measurement errors, etc.).
               </p>
             </div>
           </div>

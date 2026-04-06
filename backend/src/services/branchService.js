@@ -82,7 +82,10 @@ export const getBranchWithStats = async (branchId) => {
 
   const todayExpenses = todayExpenseRows?.reduce((sum, e) => sum + e.amount, 0) || 0;
 
-  // ACCOUNTABILITY CHECK: Get stock discrepancies
+  // VARIANCE CALCULATION: Expected vs Actual Stock
+  // Expected = Opening + Additions + Transfers In - Sales - Transfers Out - Dispatches
+  // Variance = Actual (Live Stock) - Expected
+  
   const { data: stockHistory } = await supabase
     .from('stock_history')
     .select('product_id, opening_stock, closing_stock')
@@ -94,7 +97,43 @@ export const getBranchWithStats = async (branchId) => {
     .select('product_id, current_stock')
     .eq('branch_id', branchId);
 
-  let unaccountedStock = 0;
+  // Get today's stock additions (mid-shift additions)
+  const { data: stockAdditions } = await supabase
+    .from('stock_additions')
+    .select('product_id, quantity')
+    .eq('branch_id', branchId)
+    .eq('addition_date', today);
+
+  // Get today's transfers IN (received)
+  const { data: transfersIn } = await supabase
+    .from('stock_transfers')
+    .select('product_id, quantity')
+    .eq('to_branch_id', branchId)
+    .eq('transfer_date', today);
+
+  // Get today's transfers OUT (sent)
+  const { data: transfersOut } = await supabase
+    .from('stock_transfers')
+    .select('product_id, quantity')
+    .eq('from_branch_id', branchId)
+    .eq('transfer_date', today);
+
+  // Get today's external dispatches
+  const { data: dispatches } = await supabase
+    .from('external_dispatches')
+    .select('product_id, quantity')
+    .eq('branch_id', branchId)
+    .eq('dispatch_date', today);
+
+  // Get today's sales
+  const { data: salesItems } = await supabase
+    .from('transaction_items')
+    .select('product_id, quantity, transactions!inner(branch_id, created_at)')
+    .eq('transactions.branch_id', branchId)
+    .gte('transactions.created_at', `${today} 00:00:00`)
+    .lte('transactions.created_at', `${today} 23:59:59`);
+
+  let totalVariance = 0;
   let totalOpeningStock = 0;
   let totalLiveStock = 0;
 
@@ -102,14 +141,36 @@ export const getBranchWithStats = async (branchId) => {
     liveStock.forEach(live => {
       const history = stockHistory.find(h => h.product_id === live.product_id);
       const opening = parseFloat(history?.opening_stock || 0);
-      const current = parseFloat(live.current_stock || 0);
+      const actual = parseFloat(live.current_stock || 0);
       
       totalOpeningStock += opening;
-      totalLiveStock += current;
+      totalLiveStock += actual;
       
-      // If live stock exists but opening was 0, it's unaccounted
-      if (opening === 0 && current > 0) {
-        unaccountedStock += current;
+      // Calculate expected stock
+      const additions = stockAdditions?.filter(a => a.product_id === live.product_id)
+        .reduce((sum, a) => sum + parseFloat(a.quantity), 0) || 0;
+      
+      const transferIn = transfersIn?.filter(t => t.product_id === live.product_id)
+        .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
+      
+      const transferOut = transfersOut?.filter(t => t.product_id === live.product_id)
+        .reduce((sum, t) => sum + parseFloat(t.quantity), 0) || 0;
+      
+      const dispatched = dispatches?.filter(d => d.product_id === live.product_id)
+        .reduce((sum, d) => sum + parseFloat(d.quantity), 0) || 0;
+      
+      const sold = salesItems?.filter(s => s.product_id === live.product_id)
+        .reduce((sum, s) => sum + parseFloat(s.quantity), 0) || 0;
+      
+      // Expected = Opening + Additions + Transfers In - Sales - Transfers Out - Dispatches
+      const expected = opening + additions + transferIn - sold - transferOut - dispatched;
+      
+      // Variance = Actual - Expected (positive = surplus, negative = shortage)
+      const variance = actual - expected;
+      
+      // Only count significant variances (more than 0.1kg difference)
+      if (Math.abs(variance) > 0.1) {
+        totalVariance += Math.abs(variance);
       }
     });
   }
@@ -122,6 +183,6 @@ export const getBranchWithStats = async (branchId) => {
     profit: todaySales - todayExpenses,
     totalOpeningStock,
     totalLiveStock,
-    unaccountedStock,
+    unaccountedStock: totalVariance, // Renamed but keeping same field for compatibility
   };
 };
