@@ -141,7 +141,11 @@ export const getBranchWithStats = async (branchId) => {
     liveStock.forEach(live => {
       const history = stockHistory.find(h => h.product_id === live.product_id);
       const opening = parseFloat(history?.opening_stock || 0);
-      const actual = parseFloat(live.current_stock || 0);
+      
+      // Use closing_stock if cashier submitted it (physical count), otherwise use live stock
+      const actual = history?.closing_stock !== null && history?.closing_stock !== undefined
+        ? parseFloat(history.closing_stock)
+        : parseFloat(live.current_stock || 0);
       
       totalOpeningStock += opening;
       totalLiveStock += actual;
@@ -166,7 +170,8 @@ export const getBranchWithStats = async (branchId) => {
       // (Opening already includes mid-shift additions)
       const expected = opening + transferIn - sold - transferOut - dispatched;
       
-      // Variance = Actual - Expected (positive = surplus, negative = shortage)
+      // Variance = Actual (physical count or live stock) - Expected (calculated)
+      // If cashier submitted closing stock, that's the truth and variance shows discrepancy
       const variance = actual - expected;
       
       // Only count significant variances (more than 0.1kg difference)
