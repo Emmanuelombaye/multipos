@@ -26,7 +26,7 @@ import { AdminFinancials } from './components/AdminFinancials';
 import { ProductManagement } from './components/ProductManagement';
 import { ClosingStockScreen } from './components/ClosingStockScreen';
 import { StockMovementsScreen } from './components/StockMovementsScreen';
-import { StockAuditScreen } from './components/StockAuditScreen';
+import { StockAdditionScreen } from './components/StockAdditionScreen';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
 import { apiClient } from './api/client';
@@ -42,7 +42,8 @@ type Screen =
   | 'financials'
   | 'closing'
   | 'movements'
-  | 'audit';
+  | 'audit'
+  | 'addstock';
 
 export default function App() {
   const { user, isLoggedIn, logout } = useAuth();
@@ -203,6 +204,7 @@ export default function App() {
     } else {
       return [
         { id: 'pos', label: 'POS', icon: ShoppingCart },
+        { id: 'addstock', label: 'Add Stock', icon: Plus },
         { id: 'movements', label: 'Movements', icon: ArrowRightLeft },
         { id: 'closing', label: 'Close Stock', icon: PackageCheck },
       ];
@@ -235,6 +237,8 @@ export default function App() {
           branchName={userRole === 'admin' ? 'All Branches' : branchName}
           isAdmin={userRole === 'admin'}
         />;
+      case 'addstock':
+        return <StockAdditionScreen branchId={selectedBranch} branchName={branchName} cashierName={userName} />;
       case 'closing':
         return <ClosingStockScreen branchId={selectedBranch} branchName={branchName} />;
       case 'inventory':
