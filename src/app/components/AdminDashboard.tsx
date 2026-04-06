@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DollarSign, Store, Users, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader, Shield, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { DollarSign, Store, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader, Shield, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -160,7 +160,6 @@ export function AdminDashboard() {
   // Move calculations to top to avoid React Hook violations (Error #310)
   const totalSales = dashboardData?.total_sales || 0;
   const activeBranches = branchesData.filter((b: any) => b.status === 'open').length;
-  const totalStaff = dashboardData?.total_staff || branchesData.reduce((sum, b) => sum + (b.staffCount || 0), 0);
   const alertCount = dashboardData?.low_stock_count || lowStockProducts.length;
 
   // Calculate real growth (Simple comparison of today vs yesterday for the KPI card)
@@ -238,7 +237,7 @@ export function AdminDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="p-6 border-l-4 border-l-green-600">
           <div className="flex items-start justify-between">
             <div>
@@ -276,19 +275,6 @@ export function AdminDashboard() {
             </div>
             <div className="p-3 bg-blue-50 rounded-full">
               <Store className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 border-l-4 border-l-purple-600">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-neutral-500 mb-1">Total Staff</p>
-              <p className="text-2xl font-bold text-neutral-900">{totalStaff}</p>
-              <p className="text-sm text-purple-600 mt-2 font-medium">Across all branches</p>
-            </div>
-            <div className="p-3 bg-purple-50 rounded-full">
-              <Users className="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </Card>
@@ -439,7 +425,6 @@ export function AdminDashboard() {
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Live Stock</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Unaccounted</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Today Sales</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">Staff</th>
               </tr>
             </thead>
             <tbody>
@@ -474,7 +459,6 @@ export function AdminDashboard() {
                     <td className="px-4 py-3 text-right text-sm font-semibold text-green-700">
                       KES {(branch.todaySales || 0).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-right text-sm text-neutral-600">{branch.staffCount || 0}</td>
                   </tr>
                 );
               })}
