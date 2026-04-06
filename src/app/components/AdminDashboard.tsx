@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { DollarSign, Store, Users, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { DollarSign, Store, Users, AlertTriangle, TrendingUp, TrendingDown, Clock, Loader, Shield, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { toast } from 'sonner';
 import { apiClient } from '../api/client';
