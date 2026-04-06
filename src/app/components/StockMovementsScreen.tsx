@@ -437,14 +437,14 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
       {/* ── SEND TRANSFER FORM ── */}
       {!isAdmin && showSendForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
+          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto pb-safe">
+            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between z-10">
               <h2 className="font-bold text-lg">Send Transfer Request</h2>
               <button onClick={() => setShowSendForm(false)} className="p-2 hover:bg-neutral-100 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSendTransfer} className="p-4 space-y-4">
+            <form onSubmit={handleSendTransfer} className="p-4 space-y-4 pb-24">
               <div>
                 <label className="block text-sm font-medium mb-1">Product</label>
                 <select name="product" required className="w-full border rounded-lg p-2">
@@ -471,13 +471,15 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
                 <label className="block text-sm font-medium mb-1">Notes (optional)</label>
                 <textarea name="notes" rows={2} className="w-full border rounded-lg p-2" />
               </div>
-              <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-medium active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><RefreshCw className="w-4 h-4 animate-spin" />Sending...</>
-                ) : (
-                  'Send Request'
-                )}
-              </button>
+              <div className="sticky bottom-0 bg-white pt-4 pb-safe">
+                <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-medium active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" />Sending...</>
+                  ) : (
+                    'Send Request'
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -486,14 +488,14 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
       {/* ── DISPATCH FORM ── */}
       {!isAdmin && showDispatchForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
+          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[90vh] overflow-y-auto pb-safe">
+            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between z-10">
               <h2 className="font-bold text-lg">External Dispatch</h2>
               <button onClick={() => setShowDispatchForm(false)} className="p-2 hover:bg-neutral-100 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleDispatch} className="p-4 space-y-4">
+            <form onSubmit={handleDispatch} className="p-4 space-y-4 pb-24">
               <div>
                 <label className="block text-sm font-medium mb-1">Product</label>
                 <select name="product" required className="w-full border rounded-lg p-2">
@@ -548,13 +550,15 @@ export function StockMovementsScreen({ branchId, branchName, isAdmin = false }: 
                 <label className="block text-sm font-medium mb-1">Notes (optional)</label>
                 <textarea name="notes" rows={2} className="w-full border rounded-lg p-2" />
               </div>
-              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <><RefreshCw className="w-4 h-4 animate-spin" />Recording...</>
-                ) : (
-                  'Record Dispatch'
-                )}
-              </button>
+              <div className="sticky bottom-0 bg-white pt-4 pb-safe">
+                <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" />Recording...</>
+                  ) : (
+                    'Record Dispatch'
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
