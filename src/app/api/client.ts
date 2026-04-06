@@ -260,7 +260,9 @@ class APIClient {
       return [];
     }
 
-    const data = await this.cachedGet(`/products/branch/${branchId}`, 5000);
+    // FORCE FRESH DATA - no cache for branch products to ensure stock updates show immediately
+    const response = await this.axios.get(`/products/branch/${branchId}`);
+    const data = response.data;
 
     // Cache in both IndexedDB and localStorage
     await cacheProducts(data);
