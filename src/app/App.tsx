@@ -56,25 +56,32 @@ export default function App() {
   const [userName, setUserName] = useState<string>('User');
   const [branchName, setBranchName] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // CACHE BUSTER: Force reload if version mismatch
-  const APP_VERSION = "4.2.2"; // Updated with PDF Export & Auto-Update UI
+  // CACHE BUSTER: Force reload if version mismatch (silently)
+  const APP_VERSION = "4.3.0";
   useEffect(() => {
     const cachedVersion = localStorage.getItem('app_version');
     if (cachedVersion && cachedVersion !== APP_VERSION) {
-      console.log(`[CacheBuster] Version mismatch: ${cachedVersion} vs ${APP_VERSION}. Showing update prompt...`);
-      setShowUpdateModal(true);
+      console.log(`[CacheBuster] Version mismatch: ${cachedVersion} vs ${APP_VERSION}. Auto-updating...`);
+      localStorage.setItem('app_version', APP_VERSION);
+      // Clear caches silently
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+      // Reload after a short delay
+      setTimeout(() => window.location.reload(), 500);
     } else if (!cachedVersion) {
       localStorage.setItem('app_version', APP_VERSION);
     }
 
-    // Global listener for chunk load errors (MIME type mismatch)
+    // Global listener for chunk load errors
     const handleError = (e: ErrorEvent) => {
       if (e.message?.includes('MIME type') || e.message?.includes('loading chunk')) {
-        console.warn('[CacheBuster] Detected script loading error. Prompting for update...');
-        setShowUpdateModal(true);
+        console.warn('[CacheBuster] Detected script loading error. Auto-reloading...');
+        window.location.reload();
       }
     };
 
@@ -260,42 +267,6 @@ export default function App() {
       <Toaster position="top-right" />
 
       {/* Version Update Modal */}
-      {showUpdateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in zoom-in duration-300">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <RefreshCw className="w-8 h-8 text-red-700 animate-spin-slow" />
-            </div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">New Version Available</h2>
-            <p className="text-neutral-600 mb-8">
-              A newer version of the application is available. Please update to ensure everything works correctly and you see the latest features.
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => {
-                  localStorage.setItem('app_version', APP_VERSION);
-                  window.location.reload();
-                }}
-                className="w-full bg-red-700 hover:bg-red-800 text-white h-12 text-lg font-semibold rounded-xl transition-all active:scale-95"
-              >
-                Update Now
-              </Button>
-              <Button
-                onClick={() => setShowUpdateModal(false)}
-                variant="ghost"
-                className="w-full text-neutral-500 hover:text-neutral-700"
-              >
-                Update Later
-              </Button>
-            </div>
-            <div className="mt-8 flex items-center justify-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic text-sm">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Recommended to fix "White Screen" issues</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Top Navigation Bar */}
       <header className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-red-950 text-white shadow-lg sticky top-0 z-40">
         <div className="px-4 py-3 flex items-center justify-between">
