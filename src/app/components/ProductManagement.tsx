@@ -129,13 +129,21 @@ export function ProductManagement() {
     if (!selectedProduct || !selectedBranchId) return;
     if (isSubmitting) return;
 
+    console.log('🔧 Editing product:', {
+      productId: selectedProduct.id,
+      branchId: selectedBranchId,
+      formData
+    });
+
     setIsSubmitting(true);
     try {
       // Use branch-specific update for price and threshold
-      await apiClient.updateBranchProduct(selectedBranchId, selectedProduct.id, {
+      console.log('⏳ Updating branch-specific price and threshold...');
+      const branchUpdate = await apiClient.updateBranchProduct(selectedBranchId, selectedProduct.id, {
         pricePerKg: parseFloat(formData.pricePerKg),
         lowStockThreshold: parseInt(formData.lowStockThreshold) || 20,
       });
+      console.log('✅ Branch update response:', branchUpdate);
 
       // Also update global product details if name/category/image changed
       if (
@@ -143,11 +151,13 @@ export function ProductManagement() {
         formData.category !== selectedProduct.category ||
         formData.image !== (selectedProduct.image || '🥩')
       ) {
-        await apiClient.updateProduct(selectedProduct.id, {
+        console.log('⏳ Updating global product details...');
+        const globalUpdate = await apiClient.updateProduct(selectedProduct.id, {
           name: formData.name,
           category: formData.category,
           image: formData.image,
         });
+        console.log('✅ Global update response:', globalUpdate);
       }
 
       toast.success('Product updated successfully');
@@ -155,9 +165,14 @@ export function ProductManagement() {
       setSelectedProduct(null);
       resetForm();
       await loadProducts();
-    } catch (error) {
-      console.error('Failed to update product:', error);
-      toast.error('Failed to update product');
+    } catch (error: any) {
+      console.error('❌ Failed to update product:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      toast.error(error.response?.data?.error || error.message || 'Failed to update product');
     } finally {
       setIsSubmitting(false);
     }
