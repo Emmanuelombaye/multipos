@@ -2,7 +2,6 @@ import { createRoot } from "react-dom/client";
 import App from "./app/App.tsx";
 import { AuthProvider } from "./app/api/auth.tsx";
 import { ErrorBoundary } from "./app/components/ErrorBoundary.tsx";
-import { VersionCheck } from "./app/components/VersionCheck.tsx";
 import { Toaster } from "sonner";
 import "./styles/index.css";
 
@@ -23,7 +22,6 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <AuthProvider>
-      <VersionCheck />
       <App />
       <Toaster position="top-right" richColors />
     </AuthProvider>

@@ -21,10 +21,8 @@ export function AdminDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-    loadAuditStatus();
     const intervalId = setInterval(() => {
       loadDashboardData(true);
-      loadAuditStatus();
     }, 15000);
 
     return () => clearInterval(intervalId);
@@ -145,21 +143,7 @@ export function AdminDashboard() {
     }
   };
 
-  const loadAuditStatus = async () => {
-    try {
-      const response = await fetch('/api/audit/status', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setLatestAudit(data);
-      }
-    } catch (error) {
-      console.error('Failed to load audit status:', error);
-    }
-  };
+
 
   // Generate consistent colors for expense categories
   const generateColor = (category: string) => {
