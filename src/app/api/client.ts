@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { toast } from 'sonner';
 import { enqueueOfflineAction, getOfflineQueue, removeOfflineActions } from './offlineQueue';
-import { cacheProducts, getCachedProducts, cacheBranches, getCachedBranches, cacheTransaction } from './offlineDB';
+import { cacheProducts, getCachedProducts, cacheBranches, getCachedBranches, cacheTransaction, clearProductCache } from './offlineDB';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -283,6 +283,7 @@ class APIClient {
 
     // Invalidate product caches
     this.cache.clear();
+    await clearProductCache();
 
     return response.data;
   }
@@ -316,6 +317,8 @@ class APIClient {
 
     // Invalidate product caches
     this.cache.delete('/products');
+    // Also clear IndexedDB product cache
+    await clearProductCache();
 
     return response.data;
   }
@@ -332,6 +335,10 @@ class APIClient {
   async updateBranchProduct(branchId: string, productId: string, updates: any): Promise<any> {
     const response = await this.axios.put(`/products/branch/${branchId}/${productId}`, updates);
     this.cache.clear();
+    // Also clear IndexedDB product cache
+    await clearProductCache();
+    // Clear localStorage cache
+    localStorage.removeItem(`branchProducts:${branchId}`);
     return response.data;
   }
 

@@ -267,3 +267,13 @@ export const getCachedBranches = async (): Promise<any[]> => {
         return [];
     }
 };
+
+// Clear product cache
+export const clearProductCache = async () => {
+    try {
+        await offlineDB.clear('products');
+        console.log('🗑️ Cleared product cache from IndexedDB');
+    } catch (error) {
+        console.error('Failed to clear product cache:', error);
+    }
+};

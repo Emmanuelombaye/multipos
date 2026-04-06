@@ -9,6 +9,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
 import apiClient from '../api/client';
+import { clearProductCache } from '../api/offlineDB';
 
 export function ProductManagement() {
   const [branches, setBranches] = useState<any[]>([]);
@@ -160,10 +161,18 @@ export function ProductManagement() {
         console.log('✅ Global update response:', globalUpdate);
       }
 
+      // Clear all caches to force fresh data
+      apiClient.clearCache();
+      await clearProductCache();
+      localStorage.removeItem(`branchProducts:${selectedBranchId}`);
+      console.log('🗑️ Cleared all caches');
+
       toast.success('Product updated successfully');
       setShowEditDialog(false);
       setSelectedProduct(null);
       resetForm();
+      
+      // Force reload products from server
       await loadProducts();
     } catch (error: any) {
       console.error('❌ Failed to update product:', error);
