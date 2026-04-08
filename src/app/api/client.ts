@@ -107,6 +107,8 @@ class APIClient {
           await this.axios.post('/expenses', item.payload);
         } else if (item.type === 'closingStock') {
           await this.axios.put('/inventory/entry/closing', item.payload);
+        } else if (item.type === 'addStock') {
+          await this.axios.post('/inventory/add-stock', item.payload);
         }
         completed.push(item.id);
       } catch (error) {
@@ -334,6 +336,33 @@ class APIClient {
   }
 
   async addStockMidShift(branchId: string, productId: string, quantity: number, reason?: string): Promise<any> {
+    if (!this.isOnline()) {
+      const queuedId = enqueueOfflineAction('addStock', {
+        branchId,
+        productId,
+        quantity,
+        reason,
+      });
+      
+      // Update local cache optimistically
+      const cacheKey = `branchProducts:${branchId}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const products = JSON.parse(cached);
+          const product = products.find((p: any) => p.id === productId);
+          if (product) {
+            product.current_stock = (product.current_stock || 0) + quantity;
+            localStorage.setItem(cacheKey, JSON.stringify(products));
+          }
+        } catch (e) {
+          console.error('Failed to update local cache:', e);
+        }
+      }
+      
+      return { offline: true, queuedId };
+    }
+    
     const response = await this.axios.post('/inventory/add-stock', { branchId, productId, quantity, reason });
     this.cache.clear();
     return response.data;
@@ -611,7 +640,22 @@ class APIClient {
   }
 
   async getBranchDashboard(branchId: string): Promise<any> {
-    return this.cachedGet(`/dashboard/branch/${branchId}`, 5000);
+    try {
+      const data = await this.cachedGet(`/dashboard/branch/${branchId}`, 5000);
+      // Cache for offline use
+      localStorage.setItem(`dashboard:${branchId}`, JSON.stringify(data));
+      return data;
+    } catch (error) {
+      // If offline, return cached dashboard
+      if (!this.isOnline()) {
+        const cached = localStorage.getItem(`dashboard:${branchId}`);
+        if (cached) {
+          console.log('📦 Loaded dashboard from cache (offline)');
+          return JSON.parse(cached);
+        }
+      }
+      throw error;
+    }
   }
 
   async getMetrics(branchId: string, startDate: string, endDate: string): Promise<any> {

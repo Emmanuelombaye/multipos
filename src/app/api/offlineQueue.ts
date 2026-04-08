@@ -1,4 +1,4 @@
-type OfflineActionType = 'transaction' | 'expense' | 'closingStock';
+type OfflineActionType = 'transaction' | 'expense' | 'closingStock' | 'addStock';
 
 export interface OfflineAction {
   id: string;

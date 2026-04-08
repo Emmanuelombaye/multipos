@@ -30,6 +30,7 @@ import { StockMovementsScreen } from './components/StockMovementsScreen';
 import { StockAuditScreen } from './components/StockAuditScreen';
 import { StockAdditionScreen } from './components/StockAdditionScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { OfflineSyncStatus } from './components/OfflineSyncStatus';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
 import { apiClient } from './api/client';
@@ -256,6 +257,7 @@ export default function App() {
     <div className="min-h-screen bg-neutral-50 flex flex-col">
       <Toaster position="top-right" />
       <OfflineIndicator />
+      <OfflineSyncStatus />
 
       {/* Version Update Modal */}
       {/* Top Navigation Bar */}
