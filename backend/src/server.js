@@ -71,7 +71,7 @@ app.use(cacheMiddleware(5000)); // Cache GET responses for 5 seconds
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+  res.json({ status: 'OK', message: 'Server is running', timestamp: new Date().toISOString() });
 });
 
 // Public routes
