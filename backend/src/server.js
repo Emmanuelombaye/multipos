@@ -34,28 +34,28 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, callback) => {
-    // 1. Allow internal/no-origin requests (curl, mobile, etc.)
+    // Allow internal/no-origin requests
     if (!origin) return callback(null, true);
 
-    // 2. Check if in whitelist
-    const isWhitelisted = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+    // Check if in whitelist
+    const isWhitelisted = allowedOrigins.some(allowed => 
+      origin === allowed || origin.startsWith(allowed)
+    ) || allowedOrigins.includes('*');
 
     if (isWhitelisted) {
       return callback(null, true);
     }
 
-    // 3. LOGGING FOR DEEP SCAN
     console.warn('❌ CORS BLOCKED:', {
       incoming: origin,
-      whitelist: allowedOrigins,
-      matched: isWhitelisted
+      whitelist: allowedOrigins
     });
 
-    // 4. PREVENT 500: Allow the request through but don't set CORS header
-    // Use callback(null, false) - this is standard for 'reject but don't crash'
     callback(null, false);
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 }));
 
