@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "build": "cd .. && npm install --production=false && npm run build",
+    "build": "echo 'Backend ready'",
     "seed": "node src/db/seed.js",
     "seed:realistic": "node src/db/seed-realistic.js"
   },
