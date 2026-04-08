@@ -37,12 +37,15 @@ app.use(cors({
     // Allow internal/no-origin requests
     if (!origin) return callback(null, true);
 
-    // Check if in whitelist
+    // Check if in whitelist OR is a Vercel preview URL
     const isWhitelisted = allowedOrigins.some(allowed => 
       origin === allowed || origin.startsWith(allowed)
     ) || allowedOrigins.includes('*');
+    
+    // Allow all Vercel preview URLs (*.vercel.app)
+    const isVercelPreview = origin.endsWith('.vercel.app');
 
-    if (isWhitelisted) {
+    if (isWhitelisted || isVercelPreview) {
       return callback(null, true);
     }
 
