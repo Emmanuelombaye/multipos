@@ -51,14 +51,12 @@ class APIClient {
       (response) => response,
       (error) => {
         if (!error.response) {
-          // Network error - don't redirect, just reject
-          console.error('Network error:', error.message);
+          // Network error - silent in production
           return Promise.reject(error);
         }
         if (error.response?.status === 401) {
           const currentPath = window.location.pathname;
           if (currentPath !== '/' && currentPath !== '/login') {
-            console.log('401 Unauthorized - clearing auth');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('userName');
@@ -209,11 +207,11 @@ class APIClient {
       if (!this.isOnline()) {
         const cachedBranches = await getCachedBranches();
         if (cachedBranches.length > 0) {
-          console.log(`📦 Loaded ${cachedBranches.length} branches from IndexedDB (offline)`);
           return cachedBranches;
         }
       }
-      throw error;
+      // Silent fail - return empty array
+      return [];
     }
   }
 
