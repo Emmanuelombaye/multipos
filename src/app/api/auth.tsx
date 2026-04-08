@@ -48,32 +48,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         try {
-          // Try to make an authenticated request to validate token
           await apiClient.getBranches();
-          // Token is valid, keep the user logged in
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
-        } catch (error) {
-          // Token is invalid or expired, clear everything
-          console.log('Token validation failed, logging out');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('userName');
-          setToken(null);
-          setUser(null);
+        } catch (error: any) {
+          if (error.response?.status === 401) {
+            console.log('Token expired, clearing auth');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userName');
+            setToken(null);
+            setUser(null);
+          }
         }
       }
       setIsValidating(false);
     };
 
     validateToken();
-    const handleOnline = () => {
-      validateToken();
-    };
+    const handleOnline = () => validateToken();
     window.addEventListener('online', handleOnline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-    };
+    return () => window.removeEventListener('online', handleOnline);
   }, []);
 
   const login = async (email: string, password: string) => {

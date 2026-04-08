@@ -54,21 +54,12 @@ class APIClient {
           return Promise.reject(error);
         }
         if (error.response?.status === 401) {
-          // Clear auth data
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('userName');
-
-          // Only reload if not already on login page
-          if (window.location.pathname !== '/') {
-            // Use a more gentle approach - dispatch custom event
-            window.dispatchEvent(new Event('auth-expired'));
-            // Fallback to reload after short delay
-            setTimeout(() => {
-              if (window.location.pathname !== '/') {
-                window.location.href = '/';
-              }
-            }, 1000);
+          const currentPath = window.location.pathname;
+          if (currentPath !== '/' && currentPath !== '/login') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userName');
+            window.location.href = '/';
           }
         } else if (error.response?.data?.error) {
           toast.error(error.response.data.error);
@@ -608,7 +599,15 @@ class APIClient {
 
   // Dashboard
   async getAdminDashboard(): Promise<any> {
-    return this.cachedGet('/dashboard/admin', 5000);
+    try {
+      return await this.axios.get('/dashboard/admin').then(res => res.data);
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw error;
+      }
+      console.error('Dashboard fetch error:', error);
+      return null;
+    }
   }
 
   async getBranchDashboard(branchId: string): Promise<any> {
