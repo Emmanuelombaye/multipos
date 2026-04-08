@@ -41,7 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = localStorage.getItem('user');
       
       if (storedToken && storedUser) {
-        // Always trust stored credentials, don't validate
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
         localStorage.setItem('lastOnlineTime', Date.now().toString());
@@ -49,7 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsValidating(false);
     };
 
+    // Don't wait for validation, just load immediately
     validateToken();
+    
     const handleOnline = () => {
       localStorage.setItem('lastOnlineTime', Date.now().toString());
     };
