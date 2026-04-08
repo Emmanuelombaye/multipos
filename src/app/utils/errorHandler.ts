@@ -1,5 +1,12 @@
 // Production error handler
 export const initErrorHandler = () => {
+  // Suppress all console errors in production
+  if (import.meta.env.PROD) {
+    const noop = () => {};
+    console.error = noop;
+    console.warn = noop;
+  }
+
   // Handle unhandled promise rejections - silent
   window.addEventListener('unhandledrejection', (event) => {
     event.preventDefault();
