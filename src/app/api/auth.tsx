@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Try offline login first if we have cached credentials
+      // ALWAYS try cached credentials first
       const cachedEmail = localStorage.getItem('cachedEmail');
       const cachedPassword = localStorage.getItem('cachedPassword');
       const cachedUser = localStorage.getItem('cachedUserData');
@@ -78,18 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         toast.success(`Welcome back, ${userData.name}!`);
         
-        // Try to refresh in background if online
+        // Try to refresh in background (don't wait, don't fail)
         if (navigator.onLine) {
-          apiClient.login(email, password).then(response => {
-            localStorage.setItem('cachedToken', response.token);
-            localStorage.setItem('cachedUserData', JSON.stringify(response.user));
-            localStorage.setItem('lastOnlineTime', Date.now().toString());
-          }).catch(() => {});
+          apiClient.login(email, password)
+            .then(response => {
+              localStorage.setItem('cachedToken', response.token);
+              localStorage.setItem('cachedUserData', JSON.stringify(response.user));
+              localStorage.setItem('token', response.token);
+              localStorage.setItem('user', JSON.stringify(response.user));
+              localStorage.setItem('lastOnlineTime', Date.now().toString());
+            })
+            .catch(() => {});
         }
         return;
       }
       
-      // Online login
+      // No cached credentials - must login online
       const response = await apiClient.login(email, password);
       
       const userData = response.user;
@@ -108,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast.success(`Welcome, ${userData.name}!`);
     } catch (error: any) {
-      toast.error('Login failed. Check your connection or credentials.');
+      toast.error('Cannot connect to server. Please check your internet.');
       throw error;
     } finally {
       setIsLoading(false);
