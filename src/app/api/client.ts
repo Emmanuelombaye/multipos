@@ -51,15 +51,20 @@ class APIClient {
       (response) => response,
       (error) => {
         if (!error.response) {
+          // Network error - don't redirect, just reject
+          console.error('Network error:', error.message);
           return Promise.reject(error);
         }
         if (error.response?.status === 401) {
           const currentPath = window.location.pathname;
           if (currentPath !== '/' && currentPath !== '/login') {
+            console.log('401 Unauthorized - clearing auth');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('userName');
-            window.location.href = '/';
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 100);
           }
         } else if (error.response?.data?.error) {
           toast.error(error.response.data.error);

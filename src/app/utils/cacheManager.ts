@@ -1,18 +1,13 @@
 // Auto cache clearing utility
 export const initCacheManager = () => {
-  const CURRENT_VERSION = '1.0.5';
+  const CURRENT_VERSION = '1.0.6';
   const STORED_VERSION = localStorage.getItem('app_version');
 
-  // Only clear cache on first install or major version change
   if (!STORED_VERSION) {
-    console.log('First time setup, initializing cache...');
+    console.log('First time setup');
+    localStorage.setItem('app_version', CURRENT_VERSION);
+  } else if (STORED_VERSION !== CURRENT_VERSION) {
+    console.log('Version updated:', STORED_VERSION, '->', CURRENT_VERSION);
     localStorage.setItem('app_version', CURRENT_VERSION);
   }
-  
-  // Preserve offline credentials across updates
-  const preserveKeys = [
-    'token', 'user', 'userName',
-    'cachedEmail', 'cachedPassword', 'cachedToken', 'cachedUserData',
-    'lastOnlineTime', 'offlineQueueV1', 'app_version'
-  ];
 };

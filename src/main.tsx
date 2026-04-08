@@ -4,9 +4,13 @@ import { AuthProvider } from "./app/api/auth.tsx";
 import { ErrorBoundary } from "./app/components/ErrorBoundary.tsx";
 import { Toaster } from "sonner";
 import { initCacheManager } from "./app/utils/cacheManager.ts";
+import { initErrorHandler } from "./app/utils/errorHandler.ts";
 import "./styles/index.css";
 
-// Initialize cache manager first
+// Initialize error handler first
+initErrorHandler();
+
+// Initialize cache manager
 initCacheManager();
 
 // Register service worker with auto-update

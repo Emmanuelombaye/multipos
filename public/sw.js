@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edendrop-v4';
+const CACHE_NAME = 'edendrop-v5';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -12,19 +12,26 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache).catch(err => {
-        console.log('Cache addAll error:', err);
+        console.error('Cache addAll error:', err);
+        return Promise.resolve();
       });
     })
   );
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests
   if (event.request.method !== 'GET') {
     return;
   }
 
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) {
+  // Skip cross-origin requests
+  try {
+    const url = new URL(event.request.url);
+    if (url.origin !== self.location.origin) {
+      return;
+    }
+  } catch (e) {
     return;
   }
 
@@ -33,35 +40,41 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
+          if (networkResponse && networkResponse.ok) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone).catch(() => {});
+            });
+          }
+          return networkResponse;
         })
         .catch(() => {
-          // Offline - serve from cache or fallback to index.html
-          return caches.match(event.request).then(cachedResponse => {
-            return cachedResponse || caches.match('/index.html');
-          });
+          return caches.match(event.request)
+            .then(cachedResponse => cachedResponse || caches.match('/index.html'))
+            .catch(() => new Response('Offline', { status: 503 }));
         })
     );
     return;
   }
 
-  // Stale-While-Revalidate Strategy for Other Requests (JS, CSS, Images, etc.)
+  // Cache-First Strategy for Assets (JS, CSS, Images)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const networkFetch = fetch(event.request).then((networkResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && networkResponse.ok) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, responseClone).catch(() => {});
           });
         }
         return networkResponse;
-      }).catch(() => null);
-
-      return cachedResponse || networkFetch;
+      }).catch(() => {
+        return new Response('Offline', { status: 503 });
+      });
     })
   );
 });
@@ -75,6 +88,7 @@ self.addEventListener('activate', (event) => {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
+          return Promise.resolve();
         })
       );
     }).then(() => {
