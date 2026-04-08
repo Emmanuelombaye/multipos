@@ -41,28 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = localStorage.getItem('user');
       
       if (storedToken && storedUser) {
-        // If offline, allow login with cached credentials (up to 30 days)
-        if (typeof navigator !== 'undefined' && !navigator.onLine) {
-          const lastOnlineTime = localStorage.getItem('lastOnlineTime');
-          const daysSinceOnline = lastOnlineTime 
-            ? (Date.now() - parseInt(lastOnlineTime)) / (1000 * 60 * 60 * 24)
-            : 0;
-          
-          if (daysSinceOnline <= 30) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
-          } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userName');
-            setToken(null);
-            setUser(null);
-          }
-          setIsValidating(false);
-          return;
-        }
-        
-        // Online - just trust the token, don't validate (faster)
+        // Always trust stored credentials, don't validate
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
         localStorage.setItem('lastOnlineTime', Date.now().toString());
@@ -82,28 +61,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Check if offline
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        const cachedEmail = localStorage.getItem('cachedEmail');
-        const cachedPassword = localStorage.getItem('cachedPassword');
-        const cachedUser = localStorage.getItem('cachedUserData');
-        const cachedToken = localStorage.getItem('cachedToken');
+      // Try offline login first if we have cached credentials
+      const cachedEmail = localStorage.getItem('cachedEmail');
+      const cachedPassword = localStorage.getItem('cachedPassword');
+      const cachedUser = localStorage.getItem('cachedUserData');
+      const cachedToken = localStorage.getItem('cachedToken');
+      
+      if (cachedEmail === email && cachedPassword === password && cachedUser && cachedToken) {
+        const userData = JSON.parse(cachedUser);
+        setUser(userData);
+        setToken(cachedToken);
         
-        if (cachedEmail === email && cachedPassword === password && cachedUser && cachedToken) {
-          const userData = JSON.parse(cachedUser);
-          setUser(userData);
-          setToken(cachedToken);
-          
-          localStorage.setItem('token', cachedToken);
-          localStorage.setItem('user', cachedUser);
-          localStorage.setItem('userName', userData.name);
-          
-          toast.success(`📴 Offline login: Welcome, ${userData.name}!`);
-          return;
-        } else {
-          toast.error('📴 Offline login failed. Wrong credentials or login online first.');
-          throw new Error('Offline login failed');
+        localStorage.setItem('token', cachedToken);
+        localStorage.setItem('user', cachedUser);
+        localStorage.setItem('userName', userData.name);
+        
+        toast.success(`Welcome back, ${userData.name}!`);
+        
+        // Try to refresh in background if online
+        if (navigator.onLine) {
+          apiClient.login(email, password).then(response => {
+            localStorage.setItem('cachedToken', response.token);
+            localStorage.setItem('cachedUserData', JSON.stringify(response.user));
+            localStorage.setItem('lastOnlineTime', Date.now().toString());
+          }).catch(() => {});
         }
+        return;
       }
       
       // Online login
@@ -125,9 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast.success(`Welcome, ${userData.name}!`);
     } catch (error: any) {
-      if (navigator.onLine) {
-        toast.error(error.response?.data?.error || 'Login failed');
-      }
+      toast.error('Login failed. Check your connection or credentials.');
       throw error;
     } finally {
       setIsLoading(false);
