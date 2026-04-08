@@ -63,18 +63,7 @@ export default function App() {
   const APP_VERSION = "4.3.0";
   useEffect(() => {
     const cachedVersion = localStorage.getItem('app_version');
-    if (cachedVersion && cachedVersion !== APP_VERSION) {
-      console.log(`[CacheBuster] Version mismatch: ${cachedVersion} vs ${APP_VERSION}. Auto-updating...`);
-      localStorage.setItem('app_version', APP_VERSION);
-      // Clear caches silently
-      if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => caches.delete(name));
-        });
-      }
-      // Reload after a short delay
-      setTimeout(() => window.location.reload(), 500);
-    } else if (!cachedVersion) {
+    if (!cachedVersion) {
       localStorage.setItem('app_version', APP_VERSION);
     }
 
