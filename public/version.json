@@ -1,6 +1,7 @@
 {
-  "version": "1.0.3",
-  "buildTime": "2026-04-07T12:00:00.000Z",
-  "timestamp": 1775750400000,
-  "cacheVersion": "v3"
+  "version": "1.0.4",
+  "buildTime": "2026-04-07T12:30:00.000Z",
+  "timestamp": 1775752200000,
+  "cacheVersion": "v4",
+  "offlineSupport": true
 }

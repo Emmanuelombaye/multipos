@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edendrop-v3';
+const CACHE_NAME = 'edendrop-v4';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -6,11 +6,15 @@ const urlsToCache = [
   '/manifest.json'
 ];
 
+// Cache all static assets on install
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache).catch(err => {
+        console.log('Cache addAll error:', err);
+      });
+    })
   );
 });
 
@@ -35,7 +39,10 @@ self.addEventListener('fetch', (event) => {
           });
         })
         .catch(() => {
-          return caches.match(event.request);
+          // Offline - serve from cache or fallback to index.html
+          return caches.match(event.request).then(cachedResponse => {
+            return cachedResponse || caches.match('/index.html');
+          });
         })
     );
     return;

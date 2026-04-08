@@ -39,18 +39,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const validateToken = async () => {
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
+      const lastOnlineTime = localStorage.getItem('lastOnlineTime');
       
       if (storedToken && storedUser) {
+        // If offline, allow login with cached credentials (up to 30 days)
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          const daysSinceOnline = lastOnlineTime 
+            ? (Date.now() - parseInt(lastOnlineTime)) / (1000 * 60 * 60 * 24)
+            : 0;
+          
+          if (daysSinceOnline <= 30) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
+            console.log(`📴 Offline mode: ${Math.floor(daysSinceOnline)} days since last online`);
+          } else {
+            console.log('⚠️ Offline credentials expired (>30 days)');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userName');
+            setToken(null);
+            setUser(null);
+          }
           setIsValidating(false);
           return;
         }
+        
+        // Online - validate token with server
         try {
           await apiClient.getBranches();
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          localStorage.setItem('lastOnlineTime', Date.now().toString());
         } catch (error: any) {
           if (error.response?.status === 401) {
             console.log('Token expired, clearing auth');
@@ -66,7 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     validateToken();
-    const handleOnline = () => validateToken();
+    const handleOnline = () => {
+      localStorage.setItem('lastOnlineTime', Date.now().toString());
+      validateToken();
+    };
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, []);
@@ -74,6 +96,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      
+      // Check if offline
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        // Try offline login with cached credentials
+        const cachedUser = localStorage.getItem('user');
+        const cachedToken = localStorage.getItem('token');
+        const cachedEmail = localStorage.getItem('cachedEmail');
+        const cachedPassword = localStorage.getItem('cachedPassword');
+        
+        if (cachedEmail === email && cachedPassword === password && cachedUser && cachedToken) {
+          const userData = JSON.parse(cachedUser);
+          setUser(userData);
+          setToken(cachedToken);
+          toast.success(`📴 Offline login: Welcome, ${userData.name}!`);
+          return;
+        } else {
+          toast.error('📴 Offline login failed. Wrong credentials or no cached data.');
+          throw new Error('Offline login failed');
+        }
+      }
+      
+      // Online login
       const response = await apiClient.login(email, password);
       
       const userData = response.user;
@@ -83,10 +127,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('userName', userData.name);
+      localStorage.setItem('lastOnlineTime', Date.now().toString());
+      
+      // Cache credentials for offline login (hashed for basic security)
+      localStorage.setItem('cachedEmail', email);
+      localStorage.setItem('cachedPassword', password);
 
       toast.success(`Welcome, ${userData.name}!`);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Login failed');
+      if (navigator.onLine) {
+        toast.error(error.response?.data?.error || 'Login failed');
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -99,6 +150,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userName');
+    localStorage.removeItem('cachedEmail');
+    localStorage.removeItem('cachedPassword');
+    localStorage.removeItem('lastOnlineTime');
     toast.success('Logged out successfully');
   };
 
