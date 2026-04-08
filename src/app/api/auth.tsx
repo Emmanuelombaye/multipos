@@ -100,19 +100,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if offline
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         // Try offline login with cached credentials
-        const cachedUser = localStorage.getItem('user');
-        const cachedToken = localStorage.getItem('token');
         const cachedEmail = localStorage.getItem('cachedEmail');
         const cachedPassword = localStorage.getItem('cachedPassword');
+        const cachedUser = localStorage.getItem('cachedUserData');
+        const cachedToken = localStorage.getItem('cachedToken');
         
         if (cachedEmail === email && cachedPassword === password && cachedUser && cachedToken) {
           const userData = JSON.parse(cachedUser);
           setUser(userData);
           setToken(cachedToken);
+          
+          // Restore to active storage
+          localStorage.setItem('token', cachedToken);
+          localStorage.setItem('user', cachedUser);
+          localStorage.setItem('userName', userData.name);
+          
           toast.success(`📴 Offline login: Welcome, ${userData.name}!`);
           return;
         } else {
-          toast.error('📴 Offline login failed. Wrong credentials or no cached data.');
+          toast.error('📴 Offline login failed. Wrong credentials or login online first.');
           throw new Error('Offline login failed');
         }
       }
@@ -129,9 +135,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userName', userData.name);
       localStorage.setItem('lastOnlineTime', Date.now().toString());
       
-      // Cache credentials for offline login (hashed for basic security)
+      // Cache credentials AND user data for offline login
       localStorage.setItem('cachedEmail', email);
       localStorage.setItem('cachedPassword', password);
+      localStorage.setItem('cachedToken', response.token);
+      localStorage.setItem('cachedUserData', JSON.stringify(userData));
 
       toast.success(`Welcome, ${userData.name}!`);
     } catch (error: any) {
@@ -150,9 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userName');
-    localStorage.removeItem('cachedEmail');
-    localStorage.removeItem('cachedPassword');
-    localStorage.removeItem('lastOnlineTime');
+    // DON'T remove cachedEmail and cachedPassword - keep for offline login
+    // localStorage.removeItem('cachedEmail');
+    // localStorage.removeItem('cachedPassword');
+    // Keep lastOnlineTime for offline mode tracking
     toast.success('Logged out successfully');
   };
 
