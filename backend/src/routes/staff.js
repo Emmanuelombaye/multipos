@@ -78,4 +78,21 @@ router.put('/:id', authorize(['admin', 'manager']), async (req, res, next) => {
   }
 });
 
+// Delete staff (admin only)
+router.delete('/:id', authorize(['admin']), async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', req.params.id)
+      .select('id, name, email')
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, deleted: data });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -629,6 +629,24 @@ class APIClient {
     return this.cachedGet(`/staff/branch/${branchId}`, 10000);
   }
 
+  async deleteStaff(userId: string): Promise<any> {
+    const response = await this.axios.delete(`/staff/${userId}`);
+    this.cache.clear();
+    return response.data;
+  }
+
+  async deleteStockHistory(historyId: string): Promise<any> {
+    const response = await this.axios.delete(`/inventory/history/${historyId}`);
+    this.cache.clear();
+    return response.data;
+  }
+
+  async updateStockHistory(historyId: string, updates: { openingStock?: number; closingStock?: number; date?: string }): Promise<any> {
+    const response = await this.axios.put(`/inventory/history/${historyId}`, updates);
+    this.cache.clear();
+    return response.data;
+  }
+
   // Dashboard
   async getAdminDashboard(): Promise<any> {
     try {

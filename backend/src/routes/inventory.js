@@ -2,6 +2,7 @@ import express from 'express';
 import * as inventoryService from '../services/inventoryService.js';
 import { authorize } from '../middleware/auth.js';
 import { clearCache } from '../middleware/cache.js';
+import { supabase } from '../db/supabase.js';
 
 const router = express.Router();
 
@@ -327,6 +328,55 @@ router.put('/stock/:branchId/:productId', authorize(['admin']), async (req, res,
     res.json(stock);
   } catch (error) {
     console.error('Stock update error:', error.message, { branchId: req.params.branchId, productId: req.params.productId });
+    next(error);
+  }
+});
+
+// Delete stock history entry (admin only)
+router.delete('/history/:id', authorize(['admin']), async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('stock_history')
+      .delete()
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    clearCache(`/inventory/history/${data.branch_id}`);
+    clearCache(`/dashboard/admin`);
+    
+    res.json({ success: true, deleted: data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update stock history entry (admin only)
+router.put('/history/:id', authorize(['admin']), async (req, res, next) => {
+  try {
+    const { openingStock, closingStock, date } = req.body;
+    const updates = {};
+    
+    if (openingStock !== undefined) updates.opening_stock = openingStock;
+    if (closingStock !== undefined) updates.closing_stock = closingStock;
+    if (date !== undefined) updates.date = date;
+    
+    const { data, error } = await supabase
+      .from('stock_history')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    clearCache(`/inventory/history/${data.branch_id}`);
+    clearCache(`/dashboard/admin`);
+    
+    res.json(data);
+  } catch (error) {
     next(error);
   }
 });
