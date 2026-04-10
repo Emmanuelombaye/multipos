@@ -31,6 +31,7 @@ import { StockAuditScreen } from './components/StockAuditScreen';
 import { StockAdditionScreen } from './components/StockAdditionScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { OfflineSyncStatus } from './components/OfflineSyncStatus';
+import { SystemManagement } from './components/SystemManagement';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
 import { apiClient } from './api/client';
@@ -47,7 +48,8 @@ type Screen =
   | 'closing'
   | 'movements'
   | 'audit'
-  | 'addstock';
+  | 'addstock'
+  | 'system';
 
 export default function App() {
   const { user, isLoggedIn, logout } = useAuth();
@@ -191,6 +193,7 @@ export default function App() {
         { id: 'movements', label: 'Movements', icon: ArrowRightLeft },
         { id: 'audit', label: 'Stock Audit', icon: ClipboardList },
         { id: 'reports', label: 'Analytics', icon: FileText },
+        { id: 'system', label: 'System', icon: AlertTriangle },
       ];
     } else if (userRole === 'manager') {
       return [
@@ -248,6 +251,8 @@ export default function App() {
         />;
       case 'reports':
         return <ReportsScreen />;
+      case 'system':
+        return <SystemManagement />;
       default:
         return <AdminDashboard />;
     }
