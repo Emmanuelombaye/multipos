@@ -57,6 +57,12 @@ router.put('/:id', authorize(['admin', 'manager']), async (req, res, next) => {
     const updates = {};
     if (req.body.status !== undefined) updates.status = req.body.status;
     if (req.body.role !== undefined) updates.role = req.body.role;
+    if (req.body.name !== undefined) updates.name = req.body.name;
+    if (req.body.password !== undefined) {
+      // Hash password before storing
+      const bcrypt = await import('bcryptjs');
+      updates.password = await bcrypt.default.hash(req.body.password, 10);
+    }
 
     const { data, error } = await supabase
       .from('users')
