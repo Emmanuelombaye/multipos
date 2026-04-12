@@ -49,4 +49,14 @@ router.put('/:id', authenticate, authorize(['admin']), async (req, res, next) =>
   }
 });
 
+// Delete branch (admin only)
+router.delete('/:id', authenticate, authorize(['admin']), async (req, res, next) => {
+  try {
+    await branchService.deleteBranch(req.params.id);
+    res.json({ message: 'Branch deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

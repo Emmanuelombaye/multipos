@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown, Download } from 'lucide-react';
+import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown, Download, Trash2 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -322,6 +322,24 @@ export function BranchManagement() {
     } catch (error) {
       console.error('Failed to update branch:', error);
       toast.error('Failed to update branch');
+    }
+  };
+
+  const handleDeleteBranch = async () => {
+    if (!editingBranch) return;
+    
+    if (!confirm(`Are you absolutely sure you want to permanently delete the branch "${editingBranch.name}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteBranch(editingBranch.id);
+      toast.success('Branch deleted successfully');
+      setEditDialogOpen(false);
+      await loadBranches();
+    } catch (error: any) {
+      console.error('Failed to delete branch:', error);
+      toast.error(error?.response?.data?.error || 'Failed to delete branch. It may contain protected active data.');
     }
   };
 
@@ -754,13 +772,23 @@ export function BranchManagement() {
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
+          <DialogFooter className="sm:justify-between w-full mt-4 flex items-center">
+            <Button
+              variant="outline"
+              onClick={handleDeleteBranch}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Branch
             </Button>
-            <Button onClick={handleSaveBranch} className="bg-red-700 hover:bg-red-800">
-              Save Changes
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveBranch} className="bg-red-700 hover:bg-red-800">
+                Save Changes
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -44,6 +44,16 @@ export const updateBranch = async (id, updates) => {
   return data;
 };
 
+export const deleteBranch = async (id) => {
+  const { error } = await supabase
+    .from('branches')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return { success: true };
+};
+
 export const getBranchWithStats = async (branchId) => {
   const { data: branch, error: branchError } = await supabase
     .from('branches')

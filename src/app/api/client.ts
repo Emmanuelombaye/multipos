@@ -230,6 +230,12 @@ class APIClient {
     return response.data;
   }
 
+  async deleteBranch(id: string): Promise<any> {
+    const response = await this.axios.delete(`/branches/${id}`);
+    this.cache.delete('/branches');
+    return response.data;
+  }
+
   // Products
   async getProducts(): Promise<any[]> {
     return this.cachedGet('/products', 30000);
