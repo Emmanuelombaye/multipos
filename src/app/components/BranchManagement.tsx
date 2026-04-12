@@ -343,6 +343,21 @@ export function BranchManagement() {
     }
   };
 
+  const deleteBranchQuick = async (branch: any) => {
+    if (!confirm(`Are you absolutely sure you want to permanently delete the branch "${branch.name}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteBranch(branch.id);
+      toast.success('Branch deleted successfully');
+      await loadBranches();
+    } catch (error: any) {
+      console.error('Failed to delete branch:', error);
+      toast.error(error?.response?.data?.error || 'Failed to delete branch. It may contain protected active data.');
+    }
+  };
+
   const handleSaveStock = async () => {
     if (!selectedBranch) return;
 
@@ -590,19 +605,20 @@ export function BranchManagement() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => handleManageClick(branch)}
-                >
-                  View Details
-                </Button>
+              <div className="flex gap-2 mt-4">
                 <Button
                   className="flex-1 bg-red-700 hover:bg-red-800"
                   onClick={() => handleManageClick(branch)}
                 >
-                  Manage
+                  Manage Branch
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => deleteBranchQuick(branch)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
                 </Button>
               </div>
             </Card>
