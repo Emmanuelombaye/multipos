@@ -5,6 +5,7 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner';
 import { apiClient } from '../api/client';
 
@@ -189,10 +190,46 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-red-700 mx-auto mb-4" />
-          <p className="text-neutral-600">Loading dashboard...</p>
+      <div className="space-y-6 p-4 md:p-6 bg-neutral-50 h-screen overflow-hidden">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="p-6">
+              <div className="flex justify-between items-start">
+                <div className="space-y-3 w-1/2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-full" />
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 p-6 h-96 flex flex-col justify-between">
+            <Skeleton className="h-6 w-48 mb-4" />
+            <Skeleton className="flex-1 w-full rounded-lg" />
+          </Card>
+          <Card className="p-6 h-96 flex flex-col justify-between">
+            <Skeleton className="h-6 w-48 mb-4" />
+            <Skeleton className="h-64 w-64 rounded-full mx-auto" />
+          </Card>
         </div>
       </div>
     );
