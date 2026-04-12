@@ -97,10 +97,20 @@ export function AdminDashboard() {
           });
         });
 
-        const metricEntries = Object.entries(aggregatedMetrics)
-          .map(([date, values]: any) => ({ date, ...values }))
-          .sort((a, b) => (a.date > b.date ? 1 : -1))
-          .slice(-days);
+        // Create an array of all continuous dates in range
+        const allDates: string[] = [];
+        for (let i = 0; i < days; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          allDates.push(formatDate(d));
+        }
+
+        const metricEntries = allDates.map(date => ({
+          date,
+          sales: aggregatedMetrics[date]?.sales || 0,
+          expenses: aggregatedMetrics[date]?.expenses || 0,
+          profit: aggregatedMetrics[date]?.profit || 0
+        }));
 
         setChartData(metricEntries);
 
