@@ -40,7 +40,7 @@ export const SystemManagement = () => {
   const loadBranches = async () => {
     try {
       const data = await apiClient.getBranches();
-      setBranches(data || []);
+      setBranches(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load branches');
     }
@@ -49,7 +49,7 @@ export const SystemManagement = () => {
   const loadProducts = async () => {
     try {
       const data = await apiClient.getBranchProducts(selectedBranch);
-      setProducts(data || []);
+      setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load products');
     }
@@ -58,7 +58,7 @@ export const SystemManagement = () => {
   const loadUsers = async () => {
     try {
       const data = await apiClient.getStaff();
-      setUsers(data || []);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load users');
     }
@@ -67,7 +67,7 @@ export const SystemManagement = () => {
   const loadStockHistory = async () => {
     try {
       const response = await apiClient.getStockHistory(selectedBranch, 100, 0);
-      setStockHistory(response.data || []);
+      setStockHistory(Array.isArray(response?.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to load stock history');
     }
