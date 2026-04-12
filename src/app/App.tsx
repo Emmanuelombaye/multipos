@@ -34,6 +34,7 @@ import { OfflineSyncStatus } from './components/OfflineSyncStatus';
 import { SystemManagement } from './components/SystemManagement';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './components/ui/dialog';
 import { apiClient } from './api/client';
 import { useAuth } from './api/auth';
 
@@ -61,6 +62,7 @@ export default function App() {
   const [branchName, setBranchName] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   // CACHE BUSTER: Force reload if version mismatch (silently)
   const APP_VERSION = "4.3.0";
@@ -163,6 +165,7 @@ export default function App() {
     setMobileMenuOpen(false);
     setUserName('User');
     setBranchName('');
+    setLogoutDialogOpen(false);
   };
 
   // Wait for initialization before rendering
@@ -292,7 +295,7 @@ export default function App() {
               <p className="text-xs text-neutral-300 capitalize">{userRole}</p>
             </div>
             <Button
-              onClick={handleLogout}
+              onClick={() => setLogoutDialogOpen(true)}
               variant="ghost"
               className="text-white hover:bg-white/10"
               size="sm"
@@ -384,6 +387,26 @@ export default function App() {
           </div>
         </nav>
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogDescription>
+              You will be logged out of your session and redirected to the login screen.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex gap-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleLogout}>
+              Logout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

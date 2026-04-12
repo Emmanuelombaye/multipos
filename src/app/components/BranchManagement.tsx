@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { Skeleton } from './ui/skeleton';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -370,8 +371,43 @@ export function BranchManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-neutral-500">Loading branches...</p>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="space-y-2 w-full sm:w-1/3">
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-5 w-1/2" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-20 w-full mb-6 mt-4" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((idx) => (
+            <Card key={idx} className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="w-12 h-12 rounded-lg" />
+                  <div className="space-y-2 mt-1">
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4 mt-8">
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+              </div>
+              <div className="flex gap-2 mt-6">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 flex-1" />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
