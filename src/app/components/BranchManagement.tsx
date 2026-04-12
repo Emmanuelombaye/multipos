@@ -378,7 +378,7 @@ export function BranchManagement() {
           <h1 className="text-3xl font-bold text-neutral-900 mb-2">Branch Management</h1>
           <p className="text-neutral-600">Manage all branches and operations</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
           <Button
             variant="outline"
             onClick={() => selectedDate && loadBranchMetrics(selectedDate)}
