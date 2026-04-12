@@ -162,6 +162,11 @@ export function AdminDashboard() {
   const activeBranches = branchesData.filter((b: any) => b.status === 'open').length;
   const alertCount = dashboardData?.low_stock_count || lowStockProducts.length;
 
+  const currentPeriodSales = useMemo(() => {
+    if (!chartData || chartData.length === 0) return 0;
+    return chartData[chartData.length - 1].sales || 0;
+  }, [chartData]);
+
   // Calculate real growth (Simple comparison of today vs yesterday for the KPI card)
   const growthStats = useMemo(() => {
     if (chartData.length < 2) return { percent: 0, isPositive: true };
@@ -241,9 +246,9 @@ export function AdminDashboard() {
         <Card className="p-6 border-l-4 border-l-green-600">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-neutral-500 mb-1">Total Sales</p>
+              <p className="text-sm font-medium text-neutral-500 mb-1">Today's Sales</p>
               <p className="text-2xl font-bold text-neutral-900">
-                KES {(totalSales || 0).toLocaleString()}
+                KES {(currentPeriodSales || 0).toLocaleString()}
               </p>
               <div className="flex items-center gap-1 mt-2">
                 {growthStats.isPositive ? (
@@ -252,7 +257,7 @@ export function AdminDashboard() {
                   <TrendingDown className="w-4 h-4 text-red-600" />
                 )}
                 <span className={`text-sm ${growthStats.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {growthStats.isPositive ? '+' : '-'}{growthStats.percent}% vs previous {timeframe === 'week' ? 'day' : timeframe === 'month' ? 'week' : 'month'}
+                  {growthStats.isPositive ? '+' : '-'}{growthStats.percent}% vs previous day
                 </span>
               </div>
             </div>
