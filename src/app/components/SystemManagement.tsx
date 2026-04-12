@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { toast } from 'sonner';
 import { Settings, Package, Users, Calendar, Trash2, Edit, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 export const SystemManagement = () => {
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,11 @@ export const SystemManagement = () => {
   const loadBranches = async () => {
     try {
       const data = await apiClient.getBranches();
-      setBranches(Array.isArray(data) ? data : []);
+      const branchesArr = Array.isArray(data) ? data : [];
+      setBranches(branchesArr as never[]);
+      if (branchesArr.length > 0 && !selectedBranch) {
+        setSelectedBranch(branchesArr[0].id);
+      }
     } catch (error) {
       console.error('Failed to load branches');
     }
@@ -269,16 +274,16 @@ export const SystemManagement = () => {
         {activeTab !== 'users' && (
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2">Select Branch</label>
-            <select
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full p-3 border rounded-lg"
-            >
-              <option value="">-- Select Branch --</option>
-              {branches.map(branch => (
-                <option key={branch.id} value={branch.id}>{branch.name}</option>
-              ))}
-            </select>
+            <Select value={selectedBranch || undefined} onValueChange={setSelectedBranch}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="-- Select Branch --" />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map((branch: any) => (
+                  <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
@@ -291,18 +296,21 @@ export const SystemManagement = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Product</label>
-                  <select
-                    value={stockData.productId}
-                    onChange={(e) => setStockData({...stockData, productId: e.target.value})}
-                    className="w-full p-3 border rounded-lg"
+                  <Select
+                    value={stockData.productId || undefined}
+                    onValueChange={(val) => setStockData({...stockData, productId: val})}
                   >
-                    <option value="">-- Select Product --</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} (Current: {product.current_stock || 0} kg)
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="-- Select Product --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((product: any) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name} (Current: {product.current_stock || 0} kg)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -365,16 +373,19 @@ export const SystemManagement = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Product</label>
-                  <select
-                    value={stockData.productId}
-                    onChange={(e) => setStockData({...stockData, productId: e.target.value})}
-                    className="w-full p-3 border rounded-lg"
+                  <Select
+                    value={stockData.productId || undefined}
+                    onValueChange={(val) => setStockData({...stockData, productId: val})}
                   >
-                    <option value="">-- Select Product --</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.id}>{product.name}</option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="-- Select Product --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((product: any) => (
+                        <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -504,22 +515,25 @@ export const SystemManagement = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Select User</label>
-                  <select
-                    value={selectedUser}
-                    onChange={(e) => {
-                      setSelectedUser(e.target.value);
-                      const user = users.find(u => u.id === e.target.value);
+                  <Select
+                    value={selectedUser || undefined}
+                    onValueChange={(val) => {
+                      setSelectedUser(val);
+                      const user: any = users.find((u: any) => u.id === val);
                       if (user) setUserUpdate({ name: user.name, password: '' });
                     }}
-                    className="w-full p-3 border rounded-lg"
                   >
-                    <option value="">-- Select User --</option>
-                    {users.map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.email}) - {user.role}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="-- Select User --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user: any) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name} ({user.email}) - {user.role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {selectedUser && (
