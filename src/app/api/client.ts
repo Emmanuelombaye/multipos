@@ -219,6 +219,12 @@ class APIClient {
     return this.cachedGet(`/branches/${id}`, 0); // No cache for branch details with stats
   }
 
+  async createBranch(name: string, location: string): Promise<any> {
+    const response = await this.axios.post('/branches', { name, location });
+    this.cache.delete('/branches');
+    return response.data;
+  }
+
   async updateBranch(id: string, updates: any): Promise<any> {
     const response = await this.axios.put(`/branches/${id}`, updates);
     return response.data;

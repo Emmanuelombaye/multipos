@@ -22,6 +22,8 @@ export function BranchManagement() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any>(null);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
+  const [addBranchDialogOpen, setAddBranchDialogOpen] = useState(false);
+  const [newBranch, setNewBranch] = useState({ name: '', location: '' });
   const [editingStock, setEditingStock] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [branchMetrics, setBranchMetrics] = useState<Record<string, any>>({});
@@ -287,6 +289,23 @@ export function BranchManagement() {
     setStockDialogOpen(true);
   };
 
+  const handleCreateBranch = async () => {
+    if (!newBranch.name || !newBranch.location) {
+      toast.error('Name and location are required');
+      return;
+    }
+    try {
+      await apiClient.createBranch(newBranch.name, newBranch.location);
+      toast.success('Branch created successfully');
+      setAddBranchDialogOpen(false);
+      setNewBranch({ name: '', location: '' });
+      await loadBranches();
+    } catch (error) {
+      console.error('Failed to create branch:', error);
+      toast.error('Failed to create branch');
+    }
+  };
+
   const handleSaveBranch = async () => {
     if (!editingBranch) return;
 
@@ -350,6 +369,13 @@ export function BranchManagement() {
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${metricsLoading ? 'animate-spin' : ''}`} />
             Refresh Metrics
+          </Button>
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={() => setAddBranchDialogOpen(true)}
+          >
+            <Store className="w-4 h-4 mr-2" />
+            Add Branch
           </Button>
           <Button
             className="bg-red-700 hover:bg-red-800"
@@ -590,6 +616,47 @@ export function BranchManagement() {
           </p>
         </Card>
       </div>
+
+      <Dialog open={addBranchDialogOpen} onOpenChange={setAddBranchDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Branch</DialogTitle>
+            <DialogDescription>
+              Create a new operational branch in the system.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="new-name">Branch Name</Label>
+              <Input
+                id="new-name"
+                placeholder="e.g., Downtown Store"
+                value={newBranch.name}
+                onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-location">Location</Label>
+              <Input
+                id="new-location"
+                placeholder="e.g., Central Plaza, Nairobi"
+                value={newBranch.location}
+                onChange={(e) => setNewBranch({ ...newBranch, location: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddBranchDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateBranch} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              Create Branch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Branch Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
