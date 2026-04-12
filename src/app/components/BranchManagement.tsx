@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown, Download, Trash2 } from 'lucide-react';
+import { Store, Users, TrendingUp, Package, MapPin, Edit2, Calendar as CalendarIcon, Wallet, RefreshCw, ChevronDown, Download, Trash2, AlertTriangle } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -29,6 +29,8 @@ export function BranchManagement() {
   const [branchMetrics, setBranchMetrics] = useState<Record<string, any>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [expandedExpenses, setExpandedExpenses] = useState<Set<string>>(new Set());
+  const [branchToDelete, setBranchToDelete] = useState<any>(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
   // Helper function to get category label
   const getCategoryLabel = (category: string): string => {
@@ -325,32 +327,20 @@ export function BranchManagement() {
     }
   };
 
-  const handleDeleteBranch = async () => {
-    if (!editingBranch) return;
+  const executeDeleteBranch = async () => {
+    if (!branchToDelete) return;
     
-    if (!confirm(`Are you absolutely sure you want to permanently delete the branch "${editingBranch.name}"?\n\nThis action cannot be undone.`)) {
+    if (deleteConfirmationText !== branchToDelete.name) {
+      toast.error('Branch name does not match');
       return;
     }
 
     try {
-      await apiClient.deleteBranch(editingBranch.id);
+      await apiClient.deleteBranch(branchToDelete.id);
       toast.success('Branch deleted successfully');
+      setBranchToDelete(null);
+      setDeleteConfirmationText('');
       setEditDialogOpen(false);
-      await loadBranches();
-    } catch (error: any) {
-      console.error('Failed to delete branch:', error);
-      toast.error(error?.response?.data?.error || 'Failed to delete branch. It may contain protected active data.');
-    }
-  };
-
-  const deleteBranchQuick = async (branch: any) => {
-    if (!confirm(`Are you absolutely sure you want to permanently delete the branch "${branch.name}"?\n\nThis action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await apiClient.deleteBranch(branch.id);
-      toast.success('Branch deleted successfully');
       await loadBranches();
     } catch (error: any) {
       console.error('Failed to delete branch:', error);
@@ -615,7 +605,10 @@ export function BranchManagement() {
                 <Button
                   variant="outline"
                   className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                  onClick={() => deleteBranchQuick(branch)}
+                  onClick={() => {
+                    setBranchToDelete(branch);
+                    setDeleteConfirmationText('');
+                  }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -791,7 +784,10 @@ export function BranchManagement() {
           <DialogFooter className="sm:justify-between w-full mt-4 flex items-center">
             <Button
               variant="outline"
-              onClick={handleDeleteBranch}
+              onClick={() => {
+                setBranchToDelete(editingBranch);
+                setDeleteConfirmationText('');
+              }}
               className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
             >
               <Trash2 className="w-4 h-4 mr-2" />
@@ -856,6 +852,47 @@ export function BranchManagement() {
             </Button>
             <Button onClick={handleSaveStock} className="bg-red-700 hover:bg-red-800">
               Update Stock
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!branchToDelete} onOpenChange={(open) => !open && setBranchToDelete(null)}>
+        <DialogContent className="max-w-md border-red-200">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Branch
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              This action <strong>cannot be undone</strong>. This will permanently delete the 
+              <strong className="text-red-700"> {branchToDelete?.name} </strong> branch. 
+              <br/><br/>
+              Please type <strong className="text-neutral-900 bg-neutral-100 px-1 py-0.5 rounded border border-neutral-200">{branchToDelete?.name}</strong> to confirm.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Input
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder={branchToDelete?.name}
+              className="border-red-200 focus-visible:ring-red-500"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBranchToDelete(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deleteConfirmationText !== branchToDelete?.name}
+              onClick={executeDeleteBranch}
+            >
+              I understand, delete this branch
             </Button>
           </DialogFooter>
         </DialogContent>
