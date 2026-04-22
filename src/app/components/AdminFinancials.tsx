@@ -174,7 +174,7 @@ export function AdminFinancials() {
   const discountTillSales = filteredTransactions.filter(t => t.payment_method === 'discount_till').reduce((sum, t) => sum + (t.total || 0), 0);
   const cashSales = filteredTransactions.filter(t => t.payment_method === 'cash').reduce((sum, t) => sum + (t.total || 0), 0);
   const loanSales = filteredTransactions.filter(t => t.payment_method === 'loan').reduce((sum, t) => sum + (t.total || 0), 0);
-  const totalSales = normalTillSales + discountTillSales + cashSales + loanSales;
+  const totalSales = filteredTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
   const expectedRevenue = filteredStock.reduce((sum, sh) => {
     const product = productsById[sh.product_id];
     const openingStock = sh.opening_stock || 0;
