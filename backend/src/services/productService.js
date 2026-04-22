@@ -28,6 +28,7 @@ export const createProduct = async (name, category, pricePerKg, lowStockThreshol
       name,
       category,
       price_per_kg: pricePerKg,
+      discount_price_per_kg: productData.discountPricePerKg || 0,
       low_stock_threshold: lowStockThreshold,
       image,
     })
@@ -97,12 +98,14 @@ export const getBranchProducts = async (branchId) => {
       product_id,
       current_stock,
       price_per_kg,
+      discount_price_per_kg,
       low_stock_threshold,
       products (
         id,
         name,
         category,
         price_per_kg,
+        discount_price_per_kg,
         low_stock_threshold,
         image
       )
@@ -115,6 +118,7 @@ export const getBranchProducts = async (branchId) => {
   return data.map(item => ({
     ...item.products,
     price_per_kg: item.price_per_kg ?? item.products.price_per_kg,
+    discount_price_per_kg: item.discount_price_per_kg ?? item.products.discount_price_per_kg,
     low_stock_threshold: item.low_stock_threshold ?? item.products.low_stock_threshold,
     stock: item.current_stock,
     current_stock: item.current_stock,
@@ -145,6 +149,7 @@ export const addProductToBranch = async (branchId, productData) => {
         name,
         category,
         price_per_kg: pricePerKg,
+        discount_price_per_kg: productData.discountPricePerKg || 0,
         low_stock_threshold: lowStockThreshold,
         image,
       })
@@ -175,6 +180,7 @@ export const addProductToBranch = async (branchId, productData) => {
       product_id: productId,
       current_stock: initialStock,
       price_per_kg: pricePerKg,
+      discount_price_per_kg: productData.discountPricePerKg || pricePerKg,
       low_stock_threshold: lowStockThreshold,
     })
     .select()
@@ -221,6 +227,7 @@ export const updateBranchProduct = async (branchId, productId, updates) => {
   // Map frontend field names to DB names if necessary
   const dbUpdates = {};
   if (updates.pricePerKg !== undefined) dbUpdates.price_per_kg = updates.pricePerKg;
+  if (updates.discountPricePerKg !== undefined) dbUpdates.discount_price_per_kg = updates.discountPricePerKg;
   if (updates.lowStockThreshold !== undefined) dbUpdates.low_stock_threshold = updates.lowStockThreshold;
 
   const { data, error } = await supabase

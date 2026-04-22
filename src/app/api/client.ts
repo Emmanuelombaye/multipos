@@ -279,11 +279,12 @@ class APIClient {
     return data;
   }
 
-  async addProductToBranch(branchId: string, name: string, category: string, pricePerKg: number, lowStockThreshold?: number, image?: string, initialStock?: number): Promise<any> {
+  async addProductToBranch(branchId: string, name: string, category: string, pricePerKg: number, discountPricePerKg?: number, lowStockThreshold?: number, image?: string, initialStock?: number): Promise<any> {
     const response = await this.axios.post(`/products/branch/${branchId}`, {
       name,
       category,
       pricePerKg,
+      discountPricePerKg,
       lowStockThreshold,
       image,
       initialStock,
@@ -305,11 +306,12 @@ class APIClient {
     return response.data;
   }
 
-  async createProduct(name: string, category: string, pricePerKg: number, lowStockThreshold?: number, image?: string): Promise<any> {
+  async createProduct(name: string, category: string, pricePerKg: number, discountPricePerKg?: number, lowStockThreshold?: number, image?: string): Promise<any> {
     const response = await this.axios.post('/products', {
       name,
       category,
       pricePerKg,
+      discountPricePerKg,
       lowStockThreshold,
       image,
     });

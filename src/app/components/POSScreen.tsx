@@ -32,6 +32,7 @@ interface Product {
   name: string;
   category: string;
   price_per_kg: number;
+  discount_price_per_kg: number;
   stock: number;
   image?: string;
 }
@@ -186,7 +187,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
     toast.success('Cart cleared');
   };
 
-  const handlePayment = async (method: 'cash' | 'mpesa' | 'loan') => {
+  const handlePayment = async (method: 'cash' | 'normal_till' | 'discount_till' | 'loan') => {
     if (cart.length === 0) {
       toast.error('Cart is empty');
       return;
@@ -194,12 +195,22 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
     setIsProcessing(true);
     try {
-      const items = cart.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        pricePerKg: item.pricePerKg,
-        subtotal: item.total,
-      }));
+      const items = cart.map(item => {
+        const product = products.find(p => p.id === item.productId);
+        // Use normal price for cash, normal_till, and loan. Use discount price for discount_till.
+        const priceToUse = method === 'discount_till' 
+          ? (product?.discount_price_per_kg || item.pricePerKg) 
+          : item.pricePerKg;
+        
+        const itemTotal = item.quantity * priceToUse;
+
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          pricePerKg: priceToUse,
+          subtotal: itemTotal,
+        };
+      });
 
       const response = await apiClient.createTransaction(branchId, items, method);
 
@@ -220,7 +231,7 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
         );
       } else {
         toast.success(
-          `Payment of KES ${total.toLocaleString()} processed via ${method.toUpperCase()}. Receipt printed!`
+          `Payment processed via ${method.replace('_', ' ').toUpperCase()}. Receipt printed!`
         );
       }
 
@@ -748,22 +759,30 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    onClick={() => { handlePayment('mpesa'); setShowCartSheet(false); }}
-                    className="h-12 bg-[#39B54A] hover:bg-[#2e933c] text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                    onClick={() => { handlePayment('normal_till'); setShowCartSheet(false); }}
+                    className="h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-2"
                     disabled={isProcessing}
                   >
-                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
-                    M-Pesa
+                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4" />}
+                    Normal Till
                   </Button>
                   <Button
-                    onClick={() => { handlePayment('loan'); setShowCartSheet(false); }}
-                    className="h-12 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                    onClick={() => { handlePayment('discount_till'); setShowCartSheet(false); }}
+                    className="h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2"
                     disabled={isProcessing}
                   >
-                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Handshake className="w-4 h-4" />}
-                    Loan
+                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
+                    Discount Till
                   </Button>
                 </div>
+                <Button
+                  onClick={() => { handlePayment('loan'); setShowCartSheet(false); }}
+                  className="w-full h-12 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Handshake className="w-4 h-4" />}
+                  Loan
+                </Button>
               </div>
             </SheetContent>
           </Sheet>
@@ -843,13 +862,16 @@ export function POSScreen({ branchId, cashierName }: POSScreenProps) {
                 )}
               </Button>
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => handlePayment('mpesa')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-600 text-white font-bold">
-                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'M-Pesa'}
+                <Button onClick={() => handlePayment('normal_till')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-green-600 text-white font-bold">
+                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'Normal Till'}
                 </Button>
-                <Button onClick={() => handlePayment('loan')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-bold">
-                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'Loan'}
+                <Button onClick={() => handlePayment('discount_till')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-indigo-600 text-white font-bold">
+                  {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'Discount Till'}
                 </Button>
               </div>
+              <Button onClick={() => handlePayment('loan')} disabled={cart.length === 0 || isProcessing} className="w-full h-12 bg-blue-700 hover:bg-blue-800 text-white font-bold">
+                {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : 'Loan'}
+              </Button>
             </div>
           </Card>
 

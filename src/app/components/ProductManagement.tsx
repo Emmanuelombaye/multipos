@@ -36,6 +36,7 @@ export function ProductManagement() {
     name: '',
     category: 'Meat',
     pricePerKg: '',
+    discountPricePerKg: '',
     lowStockThreshold: '20',
     image: '🥩',
     initialStock: '0',
@@ -108,6 +109,7 @@ export function ProductManagement() {
         formData.name,
         formData.category,
         parseFloat(formData.pricePerKg),
+        parseFloat(formData.discountPricePerKg) || parseFloat(formData.pricePerKg),
         parseInt(formData.lowStockThreshold) || 20,
         formData.image,
         parseFloat(formData.initialStock) || 0
@@ -142,6 +144,7 @@ export function ProductManagement() {
       console.log('⏳ Updating branch-specific price and threshold...');
       const branchUpdate = await apiClient.updateBranchProduct(selectedBranchId, selectedProduct.id, {
         pricePerKg: parseFloat(formData.pricePerKg),
+        discountPricePerKg: parseFloat(formData.discountPricePerKg) || parseFloat(formData.pricePerKg),
         lowStockThreshold: parseInt(formData.lowStockThreshold) || 20,
       });
       console.log('✅ Branch update response:', branchUpdate);
@@ -238,6 +241,7 @@ export function ProductManagement() {
       name: product.name,
       category: product.category,
       pricePerKg: product.price_per_kg.toString(),
+      discountPricePerKg: (product.discount_price_per_kg || product.price_per_kg).toString(),
       lowStockThreshold: product.low_stock_threshold.toString(),
       image: product.image || '🥩',
       initialStock: (product.current_stock || 0).toString(),
@@ -261,6 +265,7 @@ export function ProductManagement() {
       name: '',
       category: 'Meat',
       pricePerKg: '',
+      discountPricePerKg: '',
       lowStockThreshold: '20',
       image: '🥩',
       initialStock: '0',
@@ -357,8 +362,12 @@ export function ProductManagement() {
 
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Price per Kg:</span>
+                  <span className="text-neutral-600 font-medium">Normal Price:</span>
                   <span className="font-bold text-neutral-900">KES {product.price_per_kg.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-600 font-medium">Discount Price:</span>
+                  <span className="font-bold text-indigo-700">KES {(product.discount_price_per_kg || product.price_per_kg).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-600">Current Stock:</span>
@@ -453,15 +462,27 @@ export function ProductManagement() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="price">Price per Kg (KES) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={formData.pricePerKg}
-                    onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
-                    placeholder="e.g., 850"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="price">Normal Price (KES) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.pricePerKg}
+                      onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
+                      placeholder="e.g., 850"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="discountPrice">Discount Price (KES)</Label>
+                    <Input
+                      id="discountPrice"
+                      type="number"
+                      value={formData.discountPricePerKg}
+                      onChange={(e) => setFormData({ ...formData, discountPricePerKg: e.target.value })}
+                      placeholder="e.g., 800"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="threshold">Low Stock Threshold (Kg)</Label>
@@ -501,8 +522,10 @@ export function ProductManagement() {
                   <span className="font-medium">{formData.name}</span>
                   <span className="text-neutral-500">Category:</span>
                   <span className="font-medium">{formData.category}</span>
-                  <span className="text-neutral-500">Price:</span>
+                  <span className="text-neutral-500">Normal Price:</span>
                   <span className="font-medium">KES {parseFloat(formData.pricePerKg).toLocaleString()} /kg</span>
+                  <span className="text-neutral-500">Discount Price:</span>
+                  <span className="font-medium text-indigo-600">KES {parseFloat(formData.discountPricePerKg || formData.pricePerKg).toLocaleString()} /kg</span>
                   <span className="text-neutral-500">Min. Stock:</span>
                   <span className="font-medium">{formData.lowStockThreshold} kg</span>
                   <span className="text-neutral-500">Start Stock:</span>
@@ -571,14 +594,25 @@ export function ProductManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="edit-price">Price per Kg (KES) *</Label>
-              <Input
-                id="edit-price"
-                type="number"
-                value={formData.pricePerKg}
-                onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-price">Normal Price (KES) *</Label>
+                <Input
+                  id="edit-price"
+                  type="number"
+                  value={formData.pricePerKg}
+                  onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-discount-price">Discount Price (KES)</Label>
+                <Input
+                  id="edit-discount-price"
+                  type="number"
+                  value={formData.discountPricePerKg}
+                  onChange={(e) => setFormData({ ...formData, discountPricePerKg: e.target.value })}
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="edit-threshold">Low Stock Threshold (Kg)</Label>

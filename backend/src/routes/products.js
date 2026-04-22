@@ -39,7 +39,7 @@ router.get('/branch/:branchId', async (req, res, next) => {
 // Add product to a specific branch (admin only)
 router.post('/branch/:branchId', authorize(['admin']), async (req, res, next) => {
   try {
-    const { name, category, pricePerKg, lowStockThreshold, image, initialStock } = req.body;
+    const { name, category, pricePerKg, discountPricePerKg, lowStockThreshold, image, initialStock } = req.body;
 
     if (!name || !category || !pricePerKg) {
       res.status(400).json({ error: 'Name, category, and pricePerKg are required' });
@@ -50,6 +50,7 @@ router.post('/branch/:branchId', authorize(['admin']), async (req, res, next) =>
       name,
       category,
       pricePerKg,
+      discountPricePerKg,
       lowStockThreshold,
       image,
       initialStock,
@@ -97,7 +98,7 @@ router.get('/:id', async (req, res, next) => {
 // Create product (admin only)
 router.post('/', authorize(['admin']), async (req, res, next) => {
   try {
-    const { name, category, pricePerKg, lowStockThreshold, image } = req.body;
+    const { name, category, pricePerKg, discountPricePerKg, lowStockThreshold, image } = req.body;
 
     if (!name || !category || !pricePerKg) {
       res.status(400).json({ error: 'Name, category, and pricePerKg are required' });
@@ -108,6 +109,7 @@ router.post('/', authorize(['admin']), async (req, res, next) => {
       name,
       category,
       pricePerKg,
+      discountPricePerKg,
       lowStockThreshold,
       image
     );

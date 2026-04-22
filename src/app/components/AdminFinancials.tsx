@@ -10,7 +10,9 @@ import {
   PackageSearch,
   Download,
   Filter,
-  Handshake
+  Handshake,
+  ArrowUpRight,
+  TrendingDown
 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -168,11 +170,11 @@ export function AdminFinancials() {
 
   // Calculations
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const mpesaSales = filteredTransactions.filter(t => t.payment_method === 'mpesa').reduce((sum, t) => sum + (t.total || 0), 0);
+  const normalTillSales = filteredTransactions.filter(t => t.payment_method === 'normal_till').reduce((sum, t) => sum + (t.total || 0), 0);
+  const discountTillSales = filteredTransactions.filter(t => t.payment_method === 'discount_till').reduce((sum, t) => sum + (t.total || 0), 0);
   const cashSales = filteredTransactions.filter(t => t.payment_method === 'cash').reduce((sum, t) => sum + (t.total || 0), 0);
   const loanSales = filteredTransactions.filter(t => t.payment_method === 'loan').reduce((sum, t) => sum + (t.total || 0), 0);
-  const cardSales = filteredTransactions.filter(t => t.payment_method === 'card').reduce((sum, t) => sum + (t.total || 0), 0);
-  const totalSales = mpesaSales + cashSales + loanSales + cardSales;
+  const totalSales = normalTillSales + discountTillSales + cashSales + loanSales;
   const expectedRevenue = filteredStock.reduce((sum, sh) => {
     const product = productsById[sh.product_id];
     const openingStock = sh.opening_stock || 0;
@@ -188,7 +190,8 @@ export function AdminFinancials() {
     try {
       const summaryCards = [
         { label: 'Total Sales', value: `KES ${totalSales.toLocaleString()}` },
-        { label: 'M-Pesa Sales', value: `KES ${mpesaSales.toLocaleString()}` },
+        { label: 'Normal Till', value: `KES ${normalTillSales.toLocaleString()}` },
+        { label: 'Discount Till', value: `KES ${discountTillSales.toLocaleString()}` },
         { label: 'Cash Sales', value: `KES ${cashSales.toLocaleString()}` },
         { label: 'Loan Sales', value: `KES ${loanSales.toLocaleString()}` },
         { label: 'Total Expenses', value: `KES ${totalExpenses.toLocaleString()}` },
@@ -311,10 +314,17 @@ export function AdminFinancials() {
           <p className="text-xs text-blue-600 mt-2">{filteredTransactions.length} orders today</p>
         </Card>
         <Card className="p-5 border-l-4 border-l-green-600">
-          <p className="text-xs font-bold text-neutral-500 uppercase mb-1">M-Pesa Sales</p>
+          <p className="text-xs font-bold text-neutral-500 uppercase mb-1">Normal Till</p>
           <div className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-green-600" />
-            <p className="text-2xl font-bold text-neutral-900">KES {mpesaSales.toLocaleString()}</p>
+            <ArrowUpRight className="w-4 h-4 text-green-600" />
+            <p className="text-2xl font-bold text-neutral-900">KES {normalTillSales.toLocaleString()}</p>
+          </div>
+        </Card>
+        <Card className="p-5 border-l-4 border-l-indigo-600">
+          <p className="text-xs font-bold text-neutral-500 uppercase mb-1">Discount Till</p>
+          <div className="flex items-center gap-2">
+            <TrendingDown className="w-4 h-4 text-indigo-600" />
+            <p className="text-2xl font-bold text-neutral-900">KES {discountTillSales.toLocaleString()}</p>
           </div>
         </Card>
         <Card className="p-5 border-l-4 border-l-orange-600">
