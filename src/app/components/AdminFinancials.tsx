@@ -307,7 +307,7 @@ export function AdminFinancials() {
       </Card>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-5 border-l-4 border-l-blue-600">
           <p className="text-xs font-bold text-neutral-500 uppercase mb-1">Total Sales</p>
           <p className="text-2xl font-bold text-neutral-900">KES {totalSales.toLocaleString()}</p>
