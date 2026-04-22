@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Plus, Edit2, Trash2, Search, Store, Loader } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, Search, Store, Loader, Smartphone, CreditCard, ArrowUpRight, TrendingDown } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
